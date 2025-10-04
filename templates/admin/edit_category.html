@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Category • ExpensoX{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <div>
+                        <h1 class="h5 mb-1">Edit category</h1>
+                        <p class="text-muted small mb-0">Update the details available to expense submitters.</p>
+                    </div>
+                    <a href="{{ url_for('expenses.manage_categories') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Back
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label class="form-label" for="name">Name</label>
+                            {{ form.name(class_='form-control') }}
+                            {% for error in form.name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="description">Description <span class="text-muted">(optional)</span></label>
+                            {{ form.description(class_='form-control', rows='4') }}
+                            {% for error in form.description.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Created {{ category.created_at.strftime('%b %d, %Y') }}</small>
+                            {{ form.submit(class_='btn btn-primary') }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

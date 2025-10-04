@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else if (otpType === 'password_reset') {
                         window.location.href = '{{ url_for("auth.reset_password") }}';
                     } else {
-                        window.location.href = '{{ url_for("main.dashboard") }}';
+                        window.location.href = '{{ url_for("auth.dashboard") }}';
                     }
                 }, 1500);
             } else {

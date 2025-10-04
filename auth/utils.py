@@ -23,6 +23,12 @@ class OTPDeliveryError(RuntimeError):
 	"""Raised when an OTP email cannot be delivered."""
 
 
+def send_notification_email(recipient: str, subject: str, body: str) -> None:
+	"""Send a generic notification email via configured SMTP."""
+
+	_send_via_smtp(recipient, subject, body, email_purpose="notification")
+
+
 def send_otp_email(recipient: str, otp_code: str, purpose: str) -> None:
 
 	subject = f"Your ExpensoX OTP for {purpose}"
@@ -34,10 +40,10 @@ def send_otp_email(recipient: str, otp_code: str, purpose: str) -> None:
 		"\n— ExpensoX"
 	)
 
-	_send_via_smtp(recipient, subject, body)
+	_send_via_smtp(recipient, subject, body, email_purpose="otp")
 
 
-def _send_via_smtp(recipient: str, subject: str, body: str) -> None:
+def _send_via_smtp(recipient: str, subject: str, body: str, *, email_purpose: str = "otp") -> None:
 
 	config = current_app.config
 	server = config.get("SMTP_SERVER")
@@ -63,9 +69,9 @@ def _send_via_smtp(recipient: str, subject: str, body: str) -> None:
 				smtp.starttls()
 			smtp.login(username, password)
 			smtp.send_message(message)
-		current_app.logger.info("OTP email sent to %s via SMTP", recipient)
+		current_app.logger.info("%s email sent to %s via SMTP", email_purpose.upper(), recipient)
 	except Exception as exc:  # pragma: no cover - network dependent
-		current_app.logger.exception("Failed to send OTP email via SMTP")
+		current_app.logger.exception("Failed to send %s email via SMTP", email_purpose)
 		raise OTPDeliveryError(str(exc)) from exc
 
 

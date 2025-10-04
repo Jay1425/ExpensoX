@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Budgets • ExpensoX{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="h4 mb-1"><i class="fas fa-wallet me-2"></i>Budget controls</h1>
+            <p class="text-muted mb-0">Set spending limits per category and monitor real-time usage.</p>
+        </div>
+        <a href="{{ url_for('expenses.manage_categories') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-folder-tree me-2"></i>Manage categories
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4 order-2 order-lg-1">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h2 class="h6 mb-0">Create a budget</h2>
+                </div>
+                <div class="card-body">
+                    {% if not categories %}
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>Add a category before creating budgets.
+                        </div>
+                    {% endif %}
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            {{ form.category(class_='form-select', disabled=not categories) }}
+                            {% for error in form.category.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Budget amount ({{ company_currency }})</label>
+                            {{ form.amount(class_='form-control', step='0.01', min='0') }}
+                            {% for error in form.amount.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="form-label">Start</label>
+                                {{ form.period_start(class_='form-control', type='date') }}
+                                {% for error in form.period_start.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">End</label>
+                                {{ form.period_end(class_='form-control', type='date') }}
+                                {% for error in form.period_end.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-3">
+                            <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                            {{ form.description(class_='form-control', rows='3', placeholder='Add guidance for submitters or managers') }}
+                            {% for error in form.description.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {{ form.submit(class_='btn btn-primary w-100', disabled=not categories) }}
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8 order-1 order-lg-2">
+            <div class="card">
+                <div class="card-header d-flex flex-column flex-md-row gap-3 gap-md-0 align-items-md-center justify-content-between">
+                    <div>
+                        <h2 class="h6 mb-1">Active budgets</h2>
+                        <p class="text-muted small mb-0">Track spend against limits to catch overruns early.</p>
+                    </div>
+                    <form method="GET" class="d-flex gap-2">
+                        <input type="search" name="q" value="{{ search_query }}" class="form-control form-control-sm" placeholder="Search by category">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-search me-1"></i>Search
+                        </button>
+                        {% if search_query %}
+                            <a href="{{ url_for('expenses.manage_budgets') }}" class="btn btn-sm btn-link">Reset</a>
+                        {% endif %}
+                    </form>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Category</th>
+                                <th scope="col">Period</th>
+                                <th scope="col" class="text-end">Budget</th>
+                                <th scope="col" class="text-end">Spent</th>
+                                <th scope="col" class="text-end">Remaining</th>
+                                <th scope="col" style="width: 190px;">Usage</th>
+                                <th scope="col" class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if budgets %}
+                                {% for entry in budgets %}
+                                    {% set budget = entry.budget %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ budget.category.name if budget.category else '—' }}</td>
+                                        <td class="text-muted small">
+                                            {{ budget.period_start.strftime('%b %d, %Y') }} &ndash; {{ budget.period_end.strftime('%b %d, %Y') }}
+                                        </td>
+                                        <td class="text-end">{{ "{:,.2f}".format(budget.amount) }} {{ budget.currency }}</td>
+                                        <td class="text-end">{{ "{:,.2f}".format(entry.spent) }} {{ budget.currency }}</td>
+                                        <td class="text-end {% if entry.is_over_limit %}text-danger fw-semibold{% endif %}">
+                                            {{ "{:,.2f}".format(entry.remaining) }} {{ budget.currency }}
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                {% set progress_class = 'bg-success' %}
+                                                {% if entry.is_over_limit %}
+                                                    {% set progress_class = 'bg-danger' %}
+                                                {% elif entry.usage_percent >= 80 %}
+                                                    {% set progress_class = 'bg-warning' %}
+                                                {% endif %}
+                                                <div class="progress-bar {{ progress_class }}" role="progressbar" style="width: {{ entry.usage_percent }}%"></div>
+                                            </div>
+                                            <div class="text-muted small mt-1">{{ entry.usage_percent }}% used</div>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{{ url_for('expenses.edit_budget', budget_id=budget.id) }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-pen me-1"></i>Edit
+                                            </a>
+                                            <form method="POST" action="{{ url_for('expenses.delete_budget', budget_id=budget.id) }}" class="d-inline" onsubmit="return confirm('Remove this budget? This action cannot be undone.');">
+                                                {{ delete_form.hidden_tag() }}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash me-1"></i>Delete
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="fas fa-chart-line fa-3x mb-3"></i>
+                                        {% if search_query %}
+                                            <p class="mb-1">No budgets match your search.</p>
+                                            <p class="small">Try another term or reset the filters.</p>
+                                        {% else %}
+                                            <p class="mb-1">No budgets created yet.</p>
+                                            <p class="small">Add your first budget to start tracking spend.</p>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

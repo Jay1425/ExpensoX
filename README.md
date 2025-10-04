@@ -15,6 +15,15 @@ An opinionated Flask project scaffold for ExpensoX, an expense management and mu
 
 ---
 
+## ✨ Latest Enhancements (October 2025)
+
+- Employee and manager expense views now support fast pagination, status filtering, and search.
+- Managers trigger notification emails when approving or rejecting expenses, keeping submitters informed.
+- New category management workspace for admins/managers with create, edit, and delete flows.
+- Budget controls let teams cap category spend, visualize usage, and monitor overruns from a single dashboard.
+
+---
+
 ## 🏗️ Project Structure
 
 ```

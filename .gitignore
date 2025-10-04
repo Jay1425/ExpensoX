@@ -259,7 +259,8 @@ instance/
 *.db
 *.sqlite
 *.sqlite3
-migrations/versions/*.py
+#! Allow migrations to be versioned
+# migrations/versions/*.py
 !migrations/versions/.gitkeep
 
 # Uploaded files and media

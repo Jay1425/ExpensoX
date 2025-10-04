@@ -73,6 +73,12 @@
                                 <a href="{{ url_for('expenses.manager_pending_expenses') }}" class="inline-flex items-center rounded-lg border border-emerald-500/40 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:border-emerald-400 hover:text-emerald-100">
                                     Pending approvals
                                 </a>
+                                <a href="{{ url_for('expenses.manage_categories') }}" class="inline-flex items-center rounded-lg border border-indigo-500/40 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:text-indigo-100">
+                                    Manage categories
+                                </a>
+                                <a href="{{ url_for('expenses.manage_budgets') }}" class="inline-flex items-center rounded-lg border border-purple-500/40 px-4 py-2 text-sm font-semibold text-purple-200 transition hover:border-purple-400 hover:text-purple-100">
+                                    Manage budgets
+                                </a>
                             {% endif %}
                         </div>
                     </div>

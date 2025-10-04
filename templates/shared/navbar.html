@@ -1,7 +1,7 @@
 <!-- Navigation Bar Component -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand" href="{{ url_for('main.index') }}">
+        <a class="navbar-brand" href="{{ url_for('auth.index') }}">
             <i class="fas fa-receipt me-2"></i>ExpensoX
         </a>
         
@@ -14,44 +14,69 @@
                 {% if current_user.is_authenticated %}
                     <!-- Common Navigation Items -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                        <a class="nav-link" href="{{ url_for('auth.dashboard') }}">
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                         </a>
                     </li>
                     
                     <!-- Role-based Navigation -->
-                    {% if current_user.role == 'employee' %}
+                    {% if current_user.role == 'Employee' %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('employee.expenses') }}">
+                            <a class="nav-link" href="{{ url_for('expenses.list_expenses') }}">
                                 <i class="fas fa-file-invoice-dollar me-1"></i>My Expenses
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('employee.submit_expense') }}">
+                            <a class="nav-link" href="{{ url_for('expenses.submit_expense') }}">
                                 <i class="fas fa-plus me-1"></i>Submit Expense
                             </a>
                         </li>
-                    {% elif current_user.role == 'manager' %}
+                    {% elif current_user.role == 'Manager' or current_user.is_manager_approver %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="managerDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-check-circle me-1"></i>Approvals
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('manager.dashboard') }}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Approval Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('manager.pending_approvals') }}">
+                                    <i class="fas fa-clock me-2"></i>Pending Approvals
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('manager.team_expenses') }}">
+                                    <i class="fas fa-users me-2"></i>Team Expenses
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('manager.reports') }}">
+                                    <i class="fas fa-chart-bar me-2"></i>Reports
+                                </a></li>
+                            </ul>
+                        </li>
+                        {% if current_user.role == 'Manager' %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('manager.pending_approvals') }}">
-                                <i class="fas fa-clock me-1"></i>Pending Approvals
+                            <a class="nav-link" href="{{ url_for('expenses.list_expenses') }}">
+                                <i class="fas fa-file-invoice-dollar me-1"></i>My Expenses
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('manager.team_expenses') }}">
-                                <i class="fas fa-users me-1"></i>Team Expenses
-                            </a>
-                        </li>
-                    {% elif current_user.role == 'admin' %}
+                        {% endif %}
+                    {% elif current_user.role == 'Admin' %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-cog me-1"></i>Administration
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">User Management</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('admin.approval_flows') }}">Approval Flows</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('admin.expense_reports') }}">Expense Reports</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('admin.audit_logs') }}">Audit Logs</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">
+                                    <i class="fas fa-users me-2"></i>User Management
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.approval_flows') }}">
+                                    <i class="fas fa-sitemap me-2"></i>Approval Flows
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.approval_rules') }}">
+                                    <i class="fas fa-ruler-combined me-2"></i>Approval Rules
+                                </a></li>
                             </ul>
                         </li>
                     {% endif %}

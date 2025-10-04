@@ -17,6 +17,9 @@
 </head>
 <body>
     <!-- Navigation Bar -->
+    {% if current_user is not defined %}
+        {% set current_user = namespace(is_authenticated=False, role=None, first_name='Guest', company=None, email=None) %}
+    {% endif %}
     {% include 'shared/navbar.html' %}
     
     <!-- Flash Messages -->
