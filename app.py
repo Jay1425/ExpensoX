@@ -13,15 +13,27 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template('login.html')
+    return render_template('auth/login.html')
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    return render_template('register.html')
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    return render_template('auth/signup.html')
 
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    return render_template('auth/forgot_password.html')
+
+@app.route('/expenses')
+def expenses():
+    return render_template('employee/expenses.html')
+
+@app.route('/submit_expense')
+def submit_expense():
+    return render_template('employee/submit_expense.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

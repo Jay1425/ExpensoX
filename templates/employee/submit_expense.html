@@ -143,10 +143,10 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('employee.expenses') }}" class="text-gray-300 hover:text-neon-cyan transition-colors duration-300 px-3 py-2 text-sm font-medium">My Expenses</a>
-                    <a href="{{ url_for('employee.submit_expense') }}" class="text-neon-cyan hover:text-neon-purple transition-colors duration-300 px-3 py-2 text-sm font-medium">Submit Expense</a>
-                    <a href="{{ url_for('auth.profile') }}" class="text-gray-300 hover:text-neon-cyan transition-colors duration-300 px-3 py-2 text-sm font-medium">Profile</a>
-                    <a href="{{ url_for('auth.logout') }}" class="bg-gradient-to-r from-neon-pink to-red-500 text-white px-4 py-2 rounded-lg font-medium hover:shadow-neon-pink transition-all duration-300 btn-neon">Logout</a>
+                    <a href="" class="text-gray-300 hover:text-neon-cyan transition-colors duration-300 px-3 py-2 text-sm font-medium">My Expenses</a>
+                    <a href="" class="text-neon-cyan hover:text-neon-purple transition-colors duration-300 px-3 py-2 text-sm font-medium">Submit Expense</a>
+                    <a href="" class="text-gray-300 hover:text-neon-cyan transition-colors duration-300 px-3 py-2 text-sm font-medium">Profile</a>
+                    <a href="" class="bg-gradient-to-r from-neon-pink to-red-500 text-white px-4 py-2 rounded-lg font-medium hover:shadow-neon-pink transition-all duration-300 btn-neon">Logout</a>
                 </div>
             </div>
         </div>
@@ -165,20 +165,15 @@
             </div>
 
             <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
+        
                         <div class="mb-6 p-4 rounded-lg {% if category == 'danger' %}bg-red-600{% elif category == 'success' %}bg-green-600{% else %}bg-blue-600{% endif %} bg-opacity-20 border {% if category == 'danger' %}border-red-500{% elif category == 'success' %}border-green-500{% else %}border-blue-500{% endif %}">
-                            {{ message }}
+                          
                         </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
+        
             <!-- Expense Form -->
             <div class="feature-card bg-dark-card bg-opacity-50 rounded-xl p-8">
-                <form method="POST" action="{{ url_for('employee.submit_expense') }}" enctype="multipart/form-data" class="space-y-6">
-                    {{ csrf_token() }}
+                <form method="POST" action="" enctype="multipart/form-data" class="space-y-6">
+      
                     
                     <!-- Basic Information -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -277,7 +272,7 @@
 
                     <!-- Form Actions -->
                     <div class="flex flex-col sm:flex-row justify-between gap-4 pt-6">
-                        <a href="{{ url_for('employee.expenses') }}" 
+                        <a href="" 
                            class="text-center border-2 border-gray-600 text-gray-300 px-6 py-3 rounded-lg font-semibold hover:border-gray-500 hover:text-white transition-all duration-300">
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
