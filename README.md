@@ -3,7 +3,7 @@
 An opinionated Flask project scaffold for ExpensoX, an expense management and multi-level approval workflow platform. This repository delivers the backend skeleton, service stubs, and modular structure that future phases will extend with full business logic, OCR, background jobs, and a Tailwind-powered UI.
 
 ---
-
+demo  video:- https://drive.google.com/file/d/1KdqvHJWlKSqZF1Uvif2vCOZL7Zp5MzMK/view?usp=sharing
 ## 🌐 Tech Stack
 
 - **Flask 3** with Blueprints and application factory pattern
