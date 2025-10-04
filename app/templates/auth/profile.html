@@ -1,72 +1,375 @@
-{% extends "base.html" %}
-
-{% block title %}Profile - ExpensoX{% endblock %}
-
-{% block content %}
-<div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="card">
-            <div class="card-header">
-                <h4><i class="fas fa-user me-2"></i>My Profile</h4>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - ExpensoX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-cyan': '#00ffff',
+                        'neon-purple': '#bf00ff',
+                        'neon-pink': '#ff1493',
+                        'neon-green': '#39ff14',
+                        'dark-bg': '#0a0a0a',
+                        'dark-card': '#1a1a1a',
+                    },
+                    animation: {
+                        'glow-pulse': 'glow-pulse 2s ease-in-out infinite alternate',
+                        'float': 'float 3s ease-in-out infinite',
+                        'neon-flicker': 'neon-flicker 1.5s infinite alternate',
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 10px #00ffff, 0 0 20px #00ffff',
+                        'neon-green': '0 0 10px #39ff14, 0 0 20px #39ff14',
+                        'neon-purple': '0 0 10px #bf00ff, 0 0 20px #bf00ff',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes glow-pulse {
+            from { text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14; }
+            to { text-shadow: 0 0 10px #39ff14, 0 0 15px #39ff14; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes neon-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+        }
+        
+        .form-container {
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(57, 255, 20, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .form-container:hover {
+            border-color: rgba(57, 255, 20, 0.4);
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.1);
+        }
+        
+        .input-field {
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            border-color: #39ff14;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+            outline: none;
+        }
+        
+        .input-field:disabled {
+            background: rgba(26, 26, 26, 0.4);
+            border-color: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn-neon {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-neon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-neon:hover::before {
+            left: 100%;
+        }
+        
+        .bg-gradient-neon {
+            background: radial-gradient(ellipse at center, rgba(57, 255, 20, 0.1) 0%, rgba(0, 255, 255, 0.1) 35%, rgba(191, 0, 255, 0.1) 70%, rgba(10, 10, 10, 1) 100%);
+        }
+        
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #39ff14, #00ffff, #bf00ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            animation: float 3s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+        }
+        
+        .info-card {
+            background: rgba(26, 26, 26, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .info-card:hover {
+            border-color: rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .role-admin {
+            background: linear-gradient(45deg, #39ff14, #00ffff);
+            color: #000;
+        }
+        
+        .role-manager {
+            background: linear-gradient(45deg, #bf00ff, #ff1493);
+            color: #fff;
+        }
+        
+        .role-employee {
+            background: linear-gradient(45deg, #00ffff, #bf00ff);
+            color: #fff;
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-white min-h-screen bg-gradient-neon">
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-neon-cyan neon-text animate-neon-flicker">ExpensoX</h1>
+                <p class="text-gray-400 mt-2">User Profile Management</p>
             </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('auth.profile') }}">
+            
+            <!-- Profile Overview -->
+            <div class="form-container bg-dark-card bg-opacity-50 p-8 rounded-xl mb-8">
+                <div class="flex flex-col lg:flex-row items-center lg:items-start space-y-6 lg:space-y-0 lg:space-x-8">
+                    <!-- Profile Avatar -->
+                    <div class="flex-shrink-0">
+                        <div class="profile-avatar">
+                            👤
+                        </div>
+                    </div>
+                    
+                    <!-- Profile Info -->
+                    <div class="flex-1 text-center lg:text-left">
+                        <h2 class="text-3xl font-bold text-neon-green neon-text mb-2">
+                            {{ current_user.first_name }} {{ current_user.last_name }}
+                        </h2>
+                        <p class="text-xl text-gray-300 mb-4">{{ current_user.email }}</p>
+                        
+                        <div class="flex flex-wrap justify-center lg:justify-start gap-4 mb-6">
+                            <div class="role-badge role-{{ current_user.role.lower() }}">
+                                {{ current_user.role }}
+                            </div>
+                            {% if current_user.company %}
+                            <div class="text-sm bg-gray-700 px-3 py-1 rounded-full">
+                                🏢 {{ current_user.company.name }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Quick Stats -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="info-card p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-neon-cyan">{{ current_user.expenses_count or 0 }}</div>
+                                <div class="text-sm text-gray-400">Total Expenses</div>
+                            </div>
+                            <div class="info-card p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-neon-purple">{{ current_user.company.default_currency if current_user.company else 'USD' }}</div>
+                                <div class="text-sm text-gray-400">Default Currency</div>
+                            </div>
+                            <div class="info-card p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-neon-green">{{ current_user.created_at.strftime('%Y') if current_user.created_at else 'N/A' }}</div>
+                                <div class="text-sm text-gray-400">Member Since</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Edit Profile Form -->
+            <div class="form-container bg-dark-card bg-opacity-50 p-8 rounded-xl mb-8">
+                <h3 class="text-2xl font-bold text-neon-cyan neon-text mb-6">Edit Profile Information</h3>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="mb-4 p-3 rounded-lg {% if category == 'danger' %}bg-red-600{% elif category == 'success' %}bg-green-600{% else %}bg-blue-600{% endif %} bg-opacity-20 border {% if category == 'danger' %}border-red-500{% elif category == 'success' %}border-green-500{% else %}border-blue-500{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST" action="{{ url_for('auth.profile') }}" class="space-y-6">
                     {{ csrf_token() }}
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="first_name" class="form-label">First Name</label>
-                            <input type="text" class="form-control" id="first_name" name="first_name" 
-                                   value="{{ current_user.first_name }}" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="last_name" class="form-label">Last Name</label>
-                            <input type="text" class="form-control" id="last_name" name="last_name" 
-                                   value="{{ current_user.last_name }}" required>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" 
-                               value="{{ current_user.email }}" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Phone Number</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" 
-                               value="{{ current_user.phone or '' }}">
-                    </div>
-                    
-                    <hr>
-                    
-                    <h5>Change Password</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="current_password" class="form-label">Current Password</label>
-                            <input type="password" class="form-control" id="current_password" name="current_password">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="new_password" class="form-label">New Password</label>
-                            <input type="password" class="form-control" id="new_password" name="new_password">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="confirm_new_password" class="form-label">Confirm New Password</label>
-                            <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password">
+                    <!-- Personal Information -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-neon-green mb-4">Personal Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="first_name" class="block text-sm font-medium text-gray-300 mb-2">First Name</label>
+                                <input type="text" id="first_name" name="first_name" required
+                                    value="{{ current_user.first_name }}"
+                                    class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500">
+                            </div>
+                            <div>
+                                <label for="last_name" class="block text-sm font-medium text-gray-300 mb-2">Last Name</label>
+                                <input type="text" id="last_name" name="last_name" required
+                                    value="{{ current_user.last_name }}"
+                                    class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500">
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    <!-- Contact Information -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-neon-green mb-4">Contact Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+                                <input type="email" id="email" name="email" required
+                                    value="{{ current_user.email }}"
+                                    class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500">
+                            </div>
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
+                                <input type="tel" id="phone" name="phone"
+                                    value="{{ current_user.phone or '' }}"
+                                    class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                    placeholder="+1 (555) 123-4567">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Company Information (Read-only) -->
+                    {% if current_user.company %}
+                    <div>
+                        <h4 class="text-lg font-semibold text-neon-green mb-4">Company Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Company Name</label>
+                                <input type="text" value="{{ current_user.company.name }}" disabled
+                                    class="input-field w-full px-4 py-3 rounded-lg text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Role</label>
+                                <input type="text" value="{{ current_user.role }}" disabled
+                                    class="input-field w-full px-4 py-3 rounded-lg text-white">
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                        <button type="submit" 
+                            class="flex-1 bg-gradient-to-r from-neon-green to-neon-cyan text-white py-3 rounded-lg font-semibold hover:shadow-neon-green transition-all duration-300 btn-neon">
+                            💾 Update Profile
+                        </button>
+                        <a href="{{ url_for('main.dashboard') }}" 
+                            class="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 transition-all duration-300 text-center">
+                            ← Back to Dashboard
                         </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Update Profile
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Change Password Section -->
+            <div class="form-container bg-dark-card bg-opacity-50 p-8 rounded-xl">
+                <h3 class="text-2xl font-bold text-neon-purple neon-text mb-6">Change Password</h3>
+                
+                <form method="POST" action="{{ url_for('auth.change_password') }}" class="space-y-4" id="password-form">
+                    {{ csrf_token() }}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="current_password" class="block text-sm font-medium text-gray-300 mb-2">Current Password</label>
+                            <input type="password" id="current_password" name="current_password" required
+                                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                placeholder="••••••••">
+                        </div>
+                        <div>
+                            <label for="new_password" class="block text-sm font-medium text-gray-300 mb-2">New Password</label>
+                            <input type="password" id="new_password" name="new_password" required minlength="6"
+                                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                placeholder="••••••••">
+                        </div>
+                        <div>
+                            <label for="confirm_new_password" class="block text-sm font-medium text-gray-300 mb-2">Confirm New Password</label>
+                            <input type="password" id="confirm_new_password" name="confirm_new_password" required minlength="6"
+                                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                placeholder="••••••••">
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="submit" 
+                            class="bg-gradient-to-r from-neon-purple to-neon-pink text-white px-8 py-3 rounded-lg font-semibold hover:shadow-neon-purple transition-all duration-300 btn-neon">
+                            🔒 Change Password
                         </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+
+    <script>
+        // Password confirmation validation
+        document.getElementById('password-form').addEventListener('submit', function(e) {
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_new_password').value;
+            
+            if (newPassword !== confirmPassword) {
+                e.preventDefault();
+                showError('New passwords do not match!');
+                return false;
+            }
+            
+            if (newPassword.length < 6) {
+                e.preventDefault();
+                showError('New password must be at least 6 characters long!');
+                return false;
+            }
+        });
+        
+        // Error message display
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                if (document.body.contains(errorDiv)) {
+                    document.body.removeChild(errorDiv);
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
