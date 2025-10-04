@@ -1,14 +1,17 @@
 from flask import Flask
 from flask_wtf import CSRFProtect
+from flask_migrate import Migrate
 from dotenv import load_dotenv
 
 from auth import auth_bp
+from expenses import expenses_bp
 from config import Config
 from database.models import bcrypt, db
 
 load_dotenv()
 
 csrf = CSRFProtect()
+migrate = Migrate()
 
 
 def create_app(config_class: type[Config] = Config) -> Flask:
@@ -18,11 +21,13 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     db.init_app(app)
     bcrypt.init_app(app)
     csrf.init_app(app)
+    migrate.init_app(app, db)
 
     with app.app_context():
         db.create_all()
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(expenses_bp)
 
     @app.shell_context_processor
     def make_shell_context():

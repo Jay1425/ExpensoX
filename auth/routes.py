@@ -1,3 +1,6 @@
+from datetime import datetime
+from decimal import Decimal
+
 from flask import (
 	current_app,
 	flash,
@@ -7,6 +10,7 @@ from flask import (
 	session,
 	url_for,
 )
+from sqlalchemy import func
 
 from . import auth_bp
 from .forms import ForgotPasswordForm, LoginForm, OTPForm, ResetPasswordForm, SignupForm
@@ -21,7 +25,7 @@ from .models import (
 	is_otp_valid,
 	save_user,
 )
-from database.models import db
+from database.models import Expense, ExpenseStatus, User, db
 from .utils import (
 	OTPDeliveryError,
 	generate_otp,
@@ -222,7 +226,104 @@ def dashboard():
 		flash("Account not found. Please log in again.", "error")
 		return redirect(url_for("auth.login"))
 
-	return render_template("auth/index.html", user=user, dashboard=True)
+	company = user.company
+	currency = company.currency if company else current_app.config.get("DEFAULT_CURRENCY", "USD")
+	role = (user.role or "Employee").lower()
+
+	# Employee-focused summary
+	employee_summary = None
+	if role not in {"manager", "admin"}:
+		employee_query = Expense.query.filter_by(submitted_by_user_id=user.id)
+		recent_expenses = employee_query.order_by(Expense.submitted_at.desc()).limit(5).all()
+		status_counts = {status.name.lower(): 0 for status in ExpenseStatus}
+		for status, count in (
+			db.session.query(Expense.status, func.count(Expense.id))
+			.filter(Expense.submitted_by_user_id == user.id)
+			.group_by(Expense.status)
+			.all()
+		):
+			status_counts[status.name.lower()] = count
+		total_amount = (
+			db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+			.filter(Expense.submitted_by_user_id == user.id)
+			.scalar()
+		)
+		last_submitted = recent_expenses[0] if recent_expenses else None
+		employee_summary = {
+			"recent_expenses": recent_expenses,
+			"status_counts": status_counts,
+			"total_amount": Decimal(total_amount or 0),
+			"total_count": sum(status_counts.values()),
+			"last_submitted": last_submitted,
+		}
+
+	# Manager/Admin summary
+	manager_summary = None
+	if role in {"manager", "admin"} and company:
+		company_expenses = Expense.query.filter_by(company_id=company.id)
+		pending_expenses = company_expenses.filter(Expense.status == ExpenseStatus.PENDING)
+		recent_team_expenses = company_expenses.order_by(Expense.submitted_at.desc()).limit(5).all()
+		status_counts = {status.name.lower(): 0 for status in ExpenseStatus}
+		for status, count in (
+			db.session.query(Expense.status, func.count(Expense.id))
+			.filter(Expense.company_id == company.id)
+			.group_by(Expense.status)
+			.all()
+		):
+			status_counts[status.name.lower()] = count
+		month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+		monthly_total = (
+			db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+			.filter(Expense.company_id == company.id, Expense.submitted_at >= month_start)
+			.scalar()
+		)
+		pending_amount = (
+			db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+			.filter(Expense.company_id == company.id, Expense.status == ExpenseStatus.PENDING)
+			.scalar()
+		)
+		processed_expenses = company_expenses.filter(Expense.decided_at.isnot(None)).all()
+		if processed_expenses:
+			processing_days = [
+				(expense.decided_at - expense.submitted_at).total_seconds() / 86400
+				for expense in processed_expenses
+				if expense.decided_at >= expense.submitted_at
+			]
+			avg_processing_days = round(sum(processing_days) / len(processing_days), 1) if processing_days else None
+		else:
+			avg_processing_days = None
+		team_members = (
+			User.query.filter(User.company_id == company.id)
+			.order_by(User.name.asc())
+			.limit(8)
+			.all()
+		)
+		manager_summary = {
+			"pending_total": pending_expenses.count(),
+			"pending_amount": Decimal(pending_amount or 0),
+			"status_counts": status_counts,
+			"recent_expenses": recent_team_expenses,
+			"team_size": User.query.filter(User.company_id == company.id).count(),
+			"team_members": team_members,
+			"monthly_total": Decimal(monthly_total or 0),
+			"avg_processing_days": avg_processing_days,
+		}
+
+	dashboard_context = {
+		"first_name": user.name.split()[0] if user.name else "there",
+		"role": user.role,
+		"company": company,
+		"currency": currency,
+		"employee": employee_summary,
+		"manager": manager_summary,
+	}
+
+	return render_template(
+		"auth/index.html",
+		user=user,
+		dashboard=True,
+		dashboard_context=dashboard_context,
+	)
 
 
 @auth_bp.route("/logout", methods=["POST"])

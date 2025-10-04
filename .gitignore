@@ -273,7 +273,6 @@ app/static/js/compiled/
 app/static/dist/
 
 # Configuration files with sensitive data
-config.py
 local_config.py
 
 # Backup files

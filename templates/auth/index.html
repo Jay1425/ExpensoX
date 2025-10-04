@@ -11,10 +11,28 @@
     <div class="max-w-5xl mx-auto px-6 py-12">
         <header class="flex items-center justify-between">
             <a href="{{ url_for('auth.index') }}" class="text-2xl font-bold tracking-tight">ExpensoX</a>
-            <nav class="flex items-center gap-4 text-sm font-semibold">
-                <a href="{{ url_for('auth.login') }}" class="hover:text-cyan-400 transition">Login</a>
-                <a href="{{ url_for('auth.signup') }}" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-900 transition">Create account</a>
-            </nav>
+            {% if dashboard %}
+                <div class="flex items-center gap-3 text-sm">
+                    <div class="hidden text-right sm:block">
+                        <p class="font-semibold text-slate-100">{{ dashboard_context.first_name }}</p>
+                        <p class="text-xs text-slate-500">{{ dashboard_context.role }}{% if dashboard_context.company %} • {{ dashboard_context.company.name }}{% endif %}</p>
+                    </div>
+                    <form method="POST" action="{{ url_for('auth.logout') }}" class="flex items-center gap-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <a href="{{ url_for('expenses.list_expenses') }}" class="rounded-lg border border-slate-800 px-3 py-2 font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-200">
+                            My expenses
+                        </a>
+                        <button type="submit" class="rounded-lg bg-rose-500 px-3 py-2 font-semibold text-slate-900 transition hover:bg-rose-400">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <nav class="flex items-center gap-4 text-sm font-semibold">
+                    <a href="{{ url_for('auth.login') }}" class="transition hover:text-cyan-400">Login</a>
+                    <a href="{{ url_for('auth.signup') }}" class="rounded-lg bg-cyan-500 px-4 py-2 text-slate-900 transition hover:bg-cyan-400">Create account</a>
+                </nav>
+            {% endif %}
         </header>
 
         {% with messages = get_flashed_messages(with_categories=True) %}
@@ -30,14 +48,223 @@
         {% endwith %}
 
         {% if dashboard %}
-            <section class="mt-12 rounded-2xl border border-slate-800 bg-slate-900/60 p-10 shadow-2xl shadow-cyan-500/10">
-                <h1 class="text-4xl font-bold tracking-tight">Welcome back, {{ user.name }}!</h1>
-                <p class="mt-4 text-slate-400">You're signed in as <span class="font-semibold text-slate-100">{{ user.role }}</span> for <span class="font-semibold text-slate-100">{{ user.company.name }}</span>.</p>
-                <p class="mt-2 text-slate-500">Expense dashboards and approval workflows are coming soon. Stay tuned!</p>
-                <form method="POST" action="{{ url_for('auth.logout') }}" class="mt-8">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit" class="px-6 py-3 rounded-lg bg-rose-500 hover:bg-rose-400 text-sm font-semibold text-slate-900 transition">Logout</button>
-                </form>
+            <section class="mt-12 space-y-10">
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-2xl shadow-cyan-500/10">
+                    <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <p class="text-sm uppercase tracking-wide text-cyan-400">Welcome back</p>
+                            <h1 class="mt-2 text-4xl font-bold tracking-tight text-slate-100">{{ dashboard_context.first_name }}, you're running expenses like a pro.</h1>
+                            <p class="mt-4 max-w-xl text-slate-400">
+                                You're currently signed in as <span class="font-semibold text-slate-100">{{ dashboard_context.role }}</span>
+                                {% if dashboard_context.company %}
+                                    for <span class="font-semibold text-slate-100">{{ dashboard_context.company.name }}</span>
+                                {% endif %}.
+                                Use the quick actions to keep momentum.
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <a href="{{ url_for('expenses.submit_expense') }}" class="inline-flex items-center rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400">
+                                <span class="mr-2">＋</span> Submit expense
+                            </a>
+                            <a href="{{ url_for('expenses.list_expenses') }}" class="inline-flex items-center rounded-lg border border-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-200">
+                                View all expenses
+                            </a>
+                            {% if dashboard_context.manager %}
+                                <a href="{{ url_for('expenses.manager_pending_expenses') }}" class="inline-flex items-center rounded-lg border border-emerald-500/40 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:border-emerald-400 hover:text-emerald-100">
+                                    Pending approvals
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if dashboard_context.employee %}
+                    <section class="space-y-6">
+                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+                                <p class="text-xs uppercase tracking-wide text-slate-500">Total submitted</p>
+                                <p class="mt-2 text-3xl font-semibold text-slate-100">{{ dashboard_context.employee.total_count }}</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+                                <p class="text-xs uppercase tracking-wide text-slate-500">Pending</p>
+                                <p class="mt-2 text-3xl font-semibold text-amber-300">{{ dashboard_context.employee.status_counts.pending }}</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+                                <p class="text-xs uppercase tracking-wide text-slate-500">Approved</p>
+                                <p class="mt-2 text-3xl font-semibold text-emerald-300">{{ dashboard_context.employee.status_counts.approved }}</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+                                <p class="text-xs uppercase tracking-wide text-slate-500">Lifetime spend</p>
+                                <p class="mt-2 text-3xl font-semibold text-cyan-300">{{ "{:,.2f}".format(dashboard_context.employee.total_amount) }} {{ dashboard_context.currency }}</p>
+                            </div>
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-800 bg-slate-900/50">
+                            <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-slate-100">Recent submissions</h2>
+                                    {% if dashboard_context.employee.last_submitted %}
+                                        <p class="text-sm text-slate-500">Last submitted on {{ dashboard_context.employee.last_submitted.submitted_at.strftime('%b %d, %Y %H:%M') }}</p>
+                                    {% endif %}
+                                </div>
+                                <a href="{{ url_for('expenses.submit_expense') }}" class="text-sm font-semibold text-cyan-300 transition hover:text-cyan-100">New expense</a>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-800 text-left text-sm">
+                                    <thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+                                        <tr>
+                                            <th class="px-6 py-3">Title</th>
+                                            <th class="px-6 py-3">Amount</th>
+                                            <th class="px-6 py-3">Status</th>
+                                            <th class="px-6 py-3">Spent</th>
+                                            <th class="px-6 py-3">Submitted</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800">
+                                        {% if dashboard_context.employee.recent_expenses %}
+                                            {% for expense in dashboard_context.employee.recent_expenses %}
+                                                <tr class="hover:bg-slate-900/60">
+                                                    <td class="px-6 py-4">
+                                                        <p class="font-medium text-slate-100">{{ expense.title }}</p>
+                                                        {% if expense.description %}
+                                                            <p class="mt-1 text-xs text-slate-500">{{ expense.description }}</p>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="px-6 py-4 font-semibold text-slate-100">{{ "{:,.2f}".format(expense.amount) }} {{ expense.currency }}</td>
+                                                    <td class="px-6 py-4">
+                                                        {% set status = expense.status.name %}
+                                                        <span class="rounded-full px-3 py-1 text-xs font-semibold {{ 'bg-amber-500/20 text-amber-200' if status == 'PENDING' else '' }}{{ 'bg-emerald-500/20 text-emerald-200' if status == 'APPROVED' else '' }}{{ 'bg-rose-500/20 text-rose-200' if status == 'REJECTED' else '' }}">
+                                                            {{ status.title() }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-slate-300">{{ expense.spent_at.strftime('%b %d, %Y') }}</td>
+                                                    <td class="px-6 py-4 text-slate-300">{{ expense.submitted_at.strftime('%b %d, %Y %H:%M') }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="5" class="px-6 py-12 text-center text-sm text-slate-400">
+                                                    <p class="text-base font-medium text-slate-200">No expenses yet</p>
+                                                    <p class="mt-2">Start by submitting your first expense.</p>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                {% endif %}
+
+                {% if dashboard_context.manager %}
+                    <section class="space-y-6">
+                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            <div class="rounded-xl border border-emerald-600/40 bg-emerald-500/10 p-5">
+                                <p class="text-xs uppercase tracking-wide text-emerald-300">Pending approvals</p>
+                                <p class="mt-2 text-3xl font-semibold text-emerald-100">{{ dashboard_context.manager.pending_total }}</p>
+                            </div>
+                            <div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-5">
+                                <p class="text-xs uppercase tracking-wide text-amber-200">Pending amount</p>
+                                <p class="mt-2 text-3xl font-semibold text-amber-100">{{ "{:,.2f}".format(dashboard_context.manager.pending_amount) }} {{ dashboard_context.currency }}</p>
+                            </div>
+                            <div class="rounded-xl border border-cyan-500/40 bg-cyan-500/10 p-5">
+                                <p class="text-xs uppercase tracking-wide text-cyan-200">This month</p>
+                                <p class="mt-2 text-3xl font-semibold text-cyan-100">{{ "{:,.2f}".format(dashboard_context.manager.monthly_total) }} {{ dashboard_context.currency }}</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+                                <p class="text-xs uppercase tracking-wide text-slate-500">Avg. processing</p>
+                                <p class="mt-2 text-3xl font-semibold text-slate-100">{{ dashboard_context.manager.avg_processing_days if dashboard_context.manager.avg_processing_days is not none else '—' }}<span class="text-base font-normal text-slate-500"> days</span></p>
+                            </div>
+                        </div>
+
+                        <div class="grid gap-6 lg:grid-cols-[2fr,1fr]">
+                            <div class="rounded-2xl border border-slate-800 bg-slate-900/50">
+                                <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+                                    <div>
+                                        <h2 class="text-lg font-semibold text-slate-100">Team pipeline</h2>
+                                        <p class="text-sm text-slate-500">Track where expenses are in the approval flow.</p>
+                                    </div>
+                                    <a href="{{ url_for('expenses.manager_pending_expenses') }}" class="text-sm font-semibold text-emerald-200 transition hover:text-emerald-100">Review queue</a>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-slate-800 text-left text-sm">
+                                        <thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+                                            <tr>
+                                                <th class="px-6 py-3">Employee</th>
+                                                <th class="px-6 py-3">Title</th>
+                                                <th class="px-6 py-3">Amount</th>
+                                                <th class="px-6 py-3">Status</th>
+                                                <th class="px-6 py-3">Submitted</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-800">
+                                            {% if dashboard_context.manager.recent_expenses %}
+                                                {% for expense in dashboard_context.manager.recent_expenses %}
+                                                    <tr class="hover:bg-slate-900/60">
+                                                        <td class="px-6 py-4">
+                                                            <p class="font-medium text-slate-100">{{ expense.submitter.name if expense.submitter else 'Unknown' }}</p>
+                                                        </td>
+                                                        <td class="px-6 py-4 text-slate-300">{{ expense.title }}</td>
+                                                        <td class="px-6 py-4 font-semibold text-slate-100">{{ "{:,.2f}".format(expense.amount) }} {{ expense.currency }}</td>
+                                                        <td class="px-6 py-4">
+                                                            {% set status = expense.status.name %}
+                                                            <span class="rounded-full px-3 py-1 text-xs font-semibold {{ 'bg-amber-500/20 text-amber-200' if status == 'PENDING' else '' }}{{ 'bg-emerald-500/20 text-emerald-200' if status == 'APPROVED' else '' }}{{ 'bg-rose-500/20 text-rose-200' if status == 'REJECTED' else '' }}">
+                                                                {{ status.title() }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="px-6 py-4 text-slate-300">{{ expense.submitted_at.strftime('%b %d, %Y %H:%M') }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="5" class="px-6 py-12 text-center text-sm text-slate-400">
+                                                        <p class="text-base font-medium text-slate-200">No recent team activity</p>
+                                                        <p class="mt-2">Expenses submitted by your team will appear here.</p>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="space-y-6">
+                                <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+                                    <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Status breakdown</h3>
+                                    <ul class="mt-4 space-y-2 text-sm text-slate-300">
+                                        <li class="flex items-center justify-between">
+                                            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-amber-400"></span> Pending</span>
+                                            <span class="font-semibold text-slate-100">{{ dashboard_context.manager.status_counts.pending }}</span>
+                                        </li>
+                                        <li class="flex items-center justify-between">
+                                            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400"></span> Approved</span>
+                                            <span class="font-semibold text-slate-100">{{ dashboard_context.manager.status_counts.approved }}</span>
+                                        </li>
+                                        <li class="flex items-center justify-between">
+                                            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-rose-400"></span> Rejected</span>
+                                            <span class="font-semibold text-slate-100">{{ dashboard_context.manager.status_counts.rejected }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+                                    <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Team snapshot</h3>
+                                    <p class="text-2xl font-semibold text-slate-100">{{ dashboard_context.manager.team_size }} teammates</p>
+                                    <ul class="mt-4 space-y-2 text-sm text-slate-300">
+                                        {% if dashboard_context.manager.team_members %}
+                                            {% for member in dashboard_context.manager.team_members %}
+                                                <li class="flex items-center gap-3">
+                                                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-slate-200">{{ member.name[:2]|upper }}</span>
+                                                    <span>{{ member.name }}</span>
+                                                </li>
+                                            {% endfor %}
+                                        {% else %}
+                                            <li class="text-slate-500">No teammates yet. Invite colleagues to collaborate.</li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                {% endif %}
             </section>
         {% else %}
             <section class="mt-16 grid gap-12 lg:grid-cols-[2fr,1fr]">
