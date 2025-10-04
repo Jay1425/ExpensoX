@@ -1,0 +1,28 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Approval Settings{% endblock %}
+{% block page_description %}Configure approval rules and workflows{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="card-3d rounded-xl p-6">
+        <h3 class="text-xl font-semibold text-white mb-6">Approval Rules</h3>
+        <p class="text-slate-400">Configure automatic approval rules based on expense amounts and categories.</p>
+        
+        <div class="mt-8 text-center py-12">
+            <i data-lucide="settings" class="w-16 h-16 text-slate-600 mx-auto mb-4"></i>
+            <h4 class="text-lg font-semibold text-slate-300 mb-2">Approval Rules</h4>
+            <p class="text-slate-400 mb-6">Set up automated approval workflows for different expense types and amounts.</p>
+            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                Configure Rules
+            </button>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
+{% endblock %}

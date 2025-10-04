@@ -1,0 +1,43 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Reports{% endblock %}
+{% block page_description %}Financial summaries and analytics{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="card-3d rounded-xl p-6 text-center">
+            <i data-lucide="bar-chart-3" class="w-12 h-12 text-blue-400 mx-auto mb-4"></i>
+            <h4 class="text-lg font-semibold text-white mb-2">Expense Reports</h4>
+            <p class="text-slate-400 mb-4">Generate detailed expense reports by department, user, or date range.</p>
+            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                Generate Report
+            </button>
+        </div>
+        
+        <div class="card-3d rounded-xl p-6 text-center">
+            <i data-lucide="pie-chart" class="w-12 h-12 text-green-400 mx-auto mb-4"></i>
+            <h4 class="text-lg font-semibold text-white mb-2">Budget Analysis</h4>
+            <p class="text-slate-400 mb-4">Analyze budget utilization and spending patterns across the organization.</p>
+            <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                View Analysis
+            </button>
+        </div>
+        
+        <div class="card-3d rounded-xl p-6 text-center">
+            <i data-lucide="trending-up" class="w-12 h-12 text-purple-400 mx-auto mb-4"></i>
+            <h4 class="text-lg font-semibold text-white mb-2">Trend Analysis</h4>
+            <p class="text-slate-400 mb-4">Identify spending trends and forecast future expenses.</p>
+            <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                View Trends
+            </button>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
+{% endblock %}

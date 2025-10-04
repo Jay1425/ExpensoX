@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFO Dashboard - ExpensoX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1e3c72 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .sidebar {
+            transition: width 0.3s ease, padding 0.3s ease;
+            will-change: width, padding;
+        }
+        
+        .sidebar-collapsed {
+            width: 64px;
+        }
+        
+        .sidebar-expanded {
+            width: 280px;
+        }
+        
+        .sidebar-item {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        
+        .sidebar-item.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #3b82f6;
+        }
+        
+        .sidebar-text {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .sidebar-collapsed .sidebar-text {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        
+        .sidebar-expanded .sidebar-text {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
+        
+        .main-content-collapsed {
+            margin-left: 64px;
+        }
+        
+        .main-content-expanded {
+            margin-left: 280px;
+        }
+        
+        .card-3d {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(59, 130, 246, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .card-3d:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 20px 40px rgba(59, 130, 246, 0.2),
+                0 0 0 1px rgba(59, 130, 246, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .tooltip {
+            position: absolute;
+            left: 70px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 1000;
+        }
+        
+        .tooltip::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 4px solid transparent;
+            border-right-color: rgba(0, 0, 0, 0.9);
+        }
+        
+        .sidebar-collapsed .sidebar-item:hover .tooltip {
+            opacity: 1;
+        }
+
+        .stats-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.8), transparent);
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-3d {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+            box-shadow: 
+                0 4px 15px rgba(59, 130, 246, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-3d:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+        }
+
+        .input-3d {
+            background: rgba(2, 6, 23, 0.8);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.3),
+                0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .input-3d:focus {
+            background: rgba(15, 23, 42, 0.9);
+            border-color: rgba(59, 130, 246, 0.6);
+            box-shadow: 
+                0 0 0 3px rgba(59, 130, 246, 0.1),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-3d {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(59, 130, 246, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .table-3d {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .table-3d tr:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<<body class="text-gray-100 min-h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar sidebar-collapsed fixed left-0 top-0 h-full bg-slate-900/95 backdrop-blur-lg border-r border-slate-700/50 z-40 overflow-hidden">
+        <!-- Logo/Company Section -->
+        <div class="p-4 border-b border-slate-700/50">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="settings" class="w-5 h-5 text-white"></i>
+                </div>
+                <div class="sidebar-text">
+                    <h1 class="text-lg font-semibold text-white">ExpensoX</h1>
+                    <p class="text-xs text-slate-400">Admin Panel</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <nav class="p-4 space-y-2">
+            <div class="sidebar-item active flex items-center space-x-3 p-3 rounded-lg border border-transparent relative">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                <span class="sidebar-text text-slate-300 font-medium">Dashboard</span>
+                <div class="tooltip">Dashboard</div>
+            </div>
+            
+            <a href="{{ url_for('admin.users') }}" 
+               class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative">
+                <i data-lucide="users" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                <span class="sidebar-text text-slate-300 font-medium">Manage Users</span>
+                <div class="tooltip">Manage Users</div>
+            </a>
+            
+            <a href="{{ url_for('admin.company') }}" 
+               class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative">
+                <i data-lucide="building" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                <span class="sidebar-text text-slate-300 font-medium">Company</span>
+                <div class="tooltip">Company Settings</div>
+            </a>
+            
+            <a href="{{ url_for('admin.approvals') }}" 
+               class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative">
+                <i data-lucide="check-circle" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                <span class="sidebar-text text-slate-300 font-medium">Approval Settings</span>
+                <div class="tooltip">Approval Settings</div>
+            </a>
+            
+            <a href="{{ url_for('admin.expenses') }}" 
+               class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative">
+                <i data-lucide="receipt" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                <span class="sidebar-text text-slate-300 font-medium">Expense Overview</span>
+                <div class="tooltip">Expense Overview</div>
+            </a>
+            
+            <a href="{{ url_for('admin.reports') }}" 
+               class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                <span class="sidebar-text text-slate-300 font-medium">Reports</span>
+                <div class="tooltip">Financial Reports</div>
+            </a>
+            
+            <a href="{{ url_for('admin.notifications') }}" 
+               class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative">
+                <i data-lucide="bell" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                <span class="sidebar-text text-slate-300 font-medium">Notifications</span>
+                <div class="tooltip">Notifications</div>
+            </a>
+        </nav>
+        
+        <!-- Profile Section at Bottom -->
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50">
+            <a href="{{ url_for('admin.profile') }}" 
+               class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative">
+                <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-white text-sm font-semibold">{{ user.name[0].upper() if user.name else 'A' }}</span>
+                </div>
+                <div class="sidebar-text">
+                    <p class="text-slate-300 font-medium text-sm">{{ user.name if user.name else 'Admin' }}</p>
+                    <p class="text-slate-500 text-xs">{{ user.role.value if user.role else 'CFO' }}</p>
+                </div>
+                <div class="tooltip">Profile & Settings</div>
+            </a>
+            
+            <form action="{{ url_for('auth.logout') }}" method="POST" class="mt-2">
+                {{ csrf_token() }}
+                <button type="submit" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative w-full text-left hover:bg-red-500/10 hover:border-red-500/30">
+                    <i data-lucide="log-out" class="w-5 h-5 text-red-400 flex-shrink-0"></i>
+                    <span class="sidebar-text text-red-400 font-medium">Logout</span>
+                    <div class="tooltip">Logout</div>
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Toggle Button -->
+    <button id="sidebarToggle" 
+            class="fixed top-4 left-4 z-50 w-10 h-10 bg-slate-800/90 backdrop-blur-lg border border-slate-600/50 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700/90 transition-all duration-200">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+    </button>
+    
+    <!-- Main Content -->
+    <div id="mainContent" class="main-content main-content-collapsed min-h-screen">
+        <!-- Top Bar -->
+        <div class="bg-slate-900/50 backdrop-blur-lg border-b border-slate-700/50 p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">CFO Dashboard</h1>
+                    <p class="text-slate-400">Manage your organization</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 text-slate-400">
+                        <i data-lucide="building" class="w-4 h-4"></i>
+                        <span class="text-sm">{{ company.name if company else 'ExpensoX' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page Content -->
+        <div class="p-6">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mb-6 space-y-2">
+                        {% for category, message in messages %}
+                            <div class="p-4 rounded-lg border {% if category == 'error' %}bg-red-500/10 border-red-500/30 text-red-300{% elif category == 'success' %}bg-green-500/10 border-green-500/30 text-green-300{% else %}bg-blue-500/10 border-blue-500/30 text-blue-300{% endif %}">
+                                <div class="flex items-center space-x-2">
+                                    {% if category == 'error' %}
+                                        <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                                    {% elif category == 'success' %}
+                                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                                    {% else %}
+                                        <i data-lucide="info" class="w-5 h-5"></i>
+                                    {% endif %}
+                                    <span>{{ message }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Welcome Section -->
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2">Welcome back, {{ user.name }}!</h2>
+                <p class="text-slate-300">Here's what's happening at {{ company.name }}.</p>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="stats-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-200">Total Users</h3>
+                        <i data-lucide="users" class="w-6 h-6 text-blue-400"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-blue-400 mb-2">{{ total_users }}</div>
+                    <div class="text-sm text-slate-400">Company employees</div>
+                </div>
+                
+                <div class="stats-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-200">Company</h3>
+                        <i data-lucide="building" class="w-6 h-6 text-green-400"></i>
+                    </div>
+                    <div class="text-xl font-bold text-green-400 mb-2">{{ company.name }}</div>
+                    <div class="text-sm text-slate-400">{{ company.country }} • {{ company.currency }}</div>
+                </div>
+                
+                <div class="stats-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-200">Pending</h3>
+                        <i data-lucide="clock" class="w-6 h-6 text-yellow-400"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-yellow-400 mb-2">0</div>
+                    <div class="text-sm text-slate-400">Approvals needed</div>
+                </div>
+                
+                <div class="stats-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-200">Quick Action</h3>
+                        <i data-lucide="zap" class="w-6 h-6 text-purple-400"></i>
+                    </div>
+                    <button onclick="showCreateUserModal()" class="btn-3d w-full py-3 rounded-xl font-semibold text-white relative">
+                        <span class="relative z-10">Add New User</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- User Management Section -->
+            <div class="card-3d rounded-2xl p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-slate-200">User Management</h2>
+                    <button onclick="showCreateUserModal()" class="btn-3d px-6 py-3 rounded-xl font-semibold text-white relative">
+                        <span class="relative z-10">+ Add User</span>
+                    </button>
+                </div>
+                
+                <div class="table-3d rounded-xl overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-slate-800/50">
+                            <tr>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Name</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Email</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Role</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Status</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user_item in users %}
+                            <tr class="border-b border-slate-700/50">
+                                <td class="p-4 text-slate-200">{{ user_item.name }}</td>
+                                <td class="p-4 text-slate-300">{{ user_item.email }}</td>
+                                <td class="p-4">
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium
+                                        {% if user_item.role.value == 'CFO' %}bg-purple-500/20 text-purple-300{% endif %}
+                                        {% if user_item.role.value == 'DIRECTOR' %}bg-blue-500/20 text-blue-300{% endif %}
+                                        {% if user_item.role.value == 'MANAGER' %}bg-green-500/20 text-green-300{% endif %}
+                                        {% if user_item.role.value == 'FINANCE' %}bg-yellow-500/20 text-yellow-300{% endif %}
+                                        {% if user_item.role.value == 'EMPLOYEE' %}bg-gray-500/20 text-gray-300{% endif %}">
+                                        {{ user_item.role.value }}
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium
+                                        {% if user_item.is_verified %}bg-green-500/20 text-green-300{% else %}bg-red-500/20 text-red-300{% endif %}">
+                                        {% if user_item.is_verified %}Verified{% else %}Pending{% endif %}
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <button class="text-blue-400 hover:text-blue-300 text-sm mr-3">Edit</button>
+                                    <button class="text-red-400 hover:text-red-300 text-sm">Delete</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div id="createUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="modal-3d rounded-2xl p-8 w-full max-w-md mx-4">
+            <h3 class="text-2xl font-bold text-slate-200 mb-6">Create New User</h3>
+            <form id="createUserForm" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                    <input type="text" name="name" required class="input-3d w-full px-4 py-3 rounded-xl text-slate-200 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                    <input type="email" name="email" required class="input-3d w-full px-4 py-3 rounded-xl text-slate-200 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Role</label>
+                    <select name="role" required class="input-3d w-full px-4 py-3 rounded-xl text-slate-200 outline-none bg-slate-800">
+                        <option value="" class="bg-slate-800">Select a role</option>
+                        <option value="DIRECTOR" class="bg-slate-800">Director</option>
+                        <option value="MANAGER" class="bg-slate-800">Manager</option>
+                        <option value="FINANCE" class="bg-slate-800">Finance</option>
+                        <option value="EMPLOYEE" class="bg-slate-800">Employee</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Manager (Optional)</label>
+                    <select name="manager_id" class="input-3d w-full px-4 py-3 rounded-xl text-slate-200 outline-none bg-slate-800">
+                        <option value="" class="bg-slate-800">No manager</option>
+                        {% for user_item in users %}
+                            {% if user_item.role.value in ['CFO', 'DIRECTOR', 'MANAGER'] %}
+                                <option value="{{ user_item.id }}" class="bg-slate-800">{{ user_item.name }} ({{ user_item.role.value }})</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Password</label>
+                    <input type="password" name="password" value="TempPassword123!" class="input-3d w-full px-4 py-3 rounded-xl text-slate-200 outline-none">
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button type="submit" class="btn-3d flex-1 py-3 rounded-xl font-semibold text-white relative">
+                        <span class="relative z-10">Create User</span>
+                    </button>
+                    <button type="button" onclick="hideCreateUserModal()" class="flex-1 py-3 rounded-xl font-semibold text-slate-300 border border-slate-600 hover:bg-slate-700/50 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Sidebar toggle functionality
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const toggleButton = document.getElementById('sidebarToggle');
+        
+        let isExpanded = false;
+        
+        function toggleSidebar() {
+            isExpanded = !isExpanded;
+            
+            if (isExpanded) {
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded');
+                mainContent.classList.remove('main-content-collapsed');
+                mainContent.classList.add('main-content-expanded');
+            } else {
+                sidebar.classList.remove('sidebar-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+                mainContent.classList.remove('main-content-expanded');
+                mainContent.classList.add('main-content-collapsed');
+            }
+        }
+        
+        // Toggle on button click
+        toggleButton.addEventListener('click', toggleSidebar);
+        
+        // Auto-expand on hover
+        sidebar.addEventListener('mouseenter', () => {
+            if (!isExpanded) {
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded');
+            }
+        });
+        
+        // Auto-collapse on mouse leave (only if not manually expanded)
+        sidebar.addEventListener('mouseleave', () => {
+            if (!isExpanded) {
+                sidebar.classList.remove('sidebar-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+            }
+        });
+        
+        // Close sidebar when clicking outside (mobile)
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 768 && isExpanded && 
+                !sidebar.contains(e.target) && 
+                !toggleButton.contains(e.target)) {
+                toggleSidebar();
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth < 768) {
+                sidebar.classList.remove('sidebar-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+                mainContent.classList.remove('main-content-expanded');
+                mainContent.classList.add('main-content-collapsed');
+                isExpanded = false;
+            }
+        });
+
+        // Modal functions
+        function showCreateUserModal() {
+            document.getElementById('createUserModal').classList.remove('hidden');
+            document.getElementById('createUserModal').classList.add('flex');
+        }
+
+        function hideCreateUserModal() {
+            document.getElementById('createUserModal').classList.add('hidden');
+            document.getElementById('createUserModal').classList.remove('flex');
+        }
+
+        // Enhanced form submission with better error handling
+        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            // Client-side validation
+            if (!data.name || !data.email || !data.role) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            const originalText = submitButton.querySelector('span').textContent;
+            submitButton.querySelector('span').textContent = 'Creating...';
+            submitButton.disabled = true;
+
+            try {
+                const response = await fetch('/admin/create-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(data)
+                });
+
+                if (response.ok) {
+                    hideCreateUserModal();
+                    location.reload();
+                } else {
+                    const errorText = await response.text();
+                    alert('Failed to create user: ' + (errorText || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+                alert('Failed to create user: Network error');
+            } finally {
+                submitButton.querySelector('span').textContent = originalText;
+                submitButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

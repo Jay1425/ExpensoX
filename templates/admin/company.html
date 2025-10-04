@@ -1,0 +1,68 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Company Settings{% endblock %}
+{% block page_description %}Manage company information and settings{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="card-3d rounded-xl p-6">
+        <h3 class="text-xl font-semibold text-white mb-6">Company Information</h3>
+        
+        <form class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-slate-300 text-sm font-medium mb-2">Company Name</label>
+                    <input type="text" value="{{ company.name if company else '' }}" 
+                           class="w-full p-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-slate-300 text-sm font-medium mb-2">Country</label>
+                    <input type="text" value="{{ company.country if company else '' }}" 
+                           class="w-full p-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-slate-300 text-sm font-medium mb-2">Currency</label>
+                    <select class="w-full p-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none">
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="CAD">CAD - Canadian Dollar</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-slate-300 text-sm font-medium mb-2">Time Zone</label>
+                    <select class="w-full p-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none">
+                        <option value="UTC">UTC</option>
+                        <option value="EST">EST - Eastern Time</option>
+                        <option value="PST">PST - Pacific Time</option>
+                        <option value="GMT">GMT - Greenwich Mean Time</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-slate-300 text-sm font-medium mb-2">Address</label>
+                <textarea rows="3" 
+                          class="w-full p-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none"
+                          placeholder="Enter company address...">{{ company.address if company else '' }}</textarea>
+            </div>
+            
+            <div class="flex justify-end">
+                <button type="submit" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
+{% endblock %}

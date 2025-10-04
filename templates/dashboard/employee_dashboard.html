@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Employee Dashboard - ExpensoX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1e3c72 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .shape {
+            position: absolute;
+            background: linear-gradient(45deg, rgba(34, 211, 238, 0.1), rgba(147, 51, 234, 0.1));
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            left: 80%;
+            animation-delay: 5s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 80%;
+            left: 20%;
+            animation-delay: 10s;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(90deg); }
+            50% { transform: translateY(0px) rotate(180deg); }
+            75% { transform: translateY(20px) rotate(270deg); }
+            100% { transform: translateY(0px) rotate(360deg); }
+        }
+        
+        .card-3d {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(34, 211, 238, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .card-3d:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 20px 60px rgba(34, 211, 238, 0.2),
+                0 0 0 1px rgba(34, 211, 238, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .sidebar-3d {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(25px);
+            border-right: 1px solid rgba(34, 211, 238, 0.3);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .sidebar-item {
+            background: rgba(2, 6, 23, 0.5);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(34, 211, 238, 0.1);
+            border-color: rgba(34, 211, 238, 0.5);
+            transform: translateX(5px);
+        }
+        
+        .sidebar-item.active {
+            background: rgba(34, 211, 238, 0.2);
+            border-color: rgba(34, 211, 238, 0.7);
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+        }
+        
+        .btn-3d {
+            background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 50%, #0891b2 100%);
+            box-shadow: 
+                0 4px 15px rgba(34, 211, 238, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-3d:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(34, 211, 238, 0.5);
+        }
+        
+        .stats-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.8), transparent);
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(34, 211, 238, 0.2);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
+        }
+        
+        .fade-in {
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .fade-in:nth-child(1) { animation-delay: 0.1s; }
+        .fade-in:nth-child(2) { animation-delay: 0.2s; }
+        .fade-in:nth-child(3) { animation-delay: 0.3s; }
+        .fade-in:nth-child(4) { animation-delay: 0.4s; }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen relative">
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+    
+    <div class="flex min-h-screen relative z-10">
+        <!-- Sidebar -->
+        <div class="sidebar-3d w-64 min-h-screen p-6 fixed left-0 top-0">
+            <div class="mb-8">
+                <h1 class="text-2xl font-bold glow-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    ExpensoX
+                </h1>
+                <p class="text-sm text-slate-400 mt-1">Employee Dashboard</p>
+            </div>
+            
+            <nav class="space-y-3">
+                <div class="sidebar-item active rounded-xl p-3 relative">
+                    <div class="flex items-center space-x-3 relative z-10">
+                        <span class="text-cyan-400">📊</span>
+                        <span class="font-medium text-cyan-300">Overview</span>
+                    </div>
+                </div>
+                <div class="sidebar-item rounded-xl p-3 relative cursor-pointer">
+                    <div class="flex items-center space-x-3 relative z-10">
+                        <span class="text-slate-400">💰</span>
+                        <span class="font-medium text-slate-300">My Expenses</span>
+                    </div>
+                </div>
+                <div class="sidebar-item rounded-xl p-3 relative cursor-pointer">
+                    <div class="flex items-center space-x-3 relative z-10">
+                        <span class="text-slate-400">➕</span>
+                        <span class="font-medium text-slate-300">Submit Expense</span>
+                    </div>
+                </div>
+                <div class="sidebar-item rounded-xl p-3 relative cursor-pointer">
+                    <div class="flex items-center space-x-3 relative z-10">
+                        <span class="text-slate-400">👤</span>
+                        <span class="font-medium text-slate-300">Profile</span>
+                    </div>
+                </div>
+            </nav>
+            
+            <div class="absolute bottom-6 left-6 right-6">
+                <div class="stats-card p-4 text-center">
+                    <div class="text-sm text-slate-400 mb-1">Logged in as</div>
+                    <div class="font-semibold text-cyan-300">{{ user.name }}</div>
+                    <div class="text-xs text-slate-500 mt-1">{{ user.email }}</div>
+                    <form action="{{ url_for('auth.logout') }}" method="POST" class="mt-3">
+                        {{ csrf_token() }}
+                        <button type="submit" class="text-xs text-red-400 hover:text-red-300 transition-colors">
+                            Sign Out
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-8">
+            <div class="max-w-7xl mx-auto space-y-8">
+                <!-- Header -->
+                <div class="fade-in">
+                    <h1 class="text-4xl font-bold glow-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                        Employee Dashboard
+                    </h1>
+                    <p class="text-slate-300">Welcome back, {{ user.name }}. Manage your expenses and submissions.</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in">
+                    <div class="stats-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-slate-200">Company</h3>
+                            <span class="text-2xl">🏢</span>
+                        </div>
+                        <div class="text-xl font-bold text-green-400 mb-2">{{ company.name }}</div>
+                        <div class="text-sm text-slate-400">{{ company.country }} • {{ company.currency }}</div>
+                    </div>
+                    
+                    <div class="stats-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-slate-200">My Role</h3>
+                            <span class="text-2xl">👤</span>
+                        </div>
+                        <div class="text-xl font-bold text-blue-400 mb-2">{{ user.role.value }}</div>
+                        <div class="text-sm text-slate-400">Current position</div>
+                    </div>
+                    
+                    <div class="stats-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-slate-200">Quick Action</h3>
+                            <span class="text-2xl">⚡</span>
+                        </div>
+                        <button class="btn-3d w-full py-3 rounded-xl font-semibold text-slate-900 relative">
+                            <span class="relative z-10">Submit Expense</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Employee Tools Section -->
+                <div class="card-3d rounded-3xl p-8 fade-in">
+                    <h2 class="text-2xl font-bold text-slate-200 mb-6">Employee Tools</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="stats-card p-6 cursor-pointer">
+                            <div class="flex items-center space-x-4">
+                                <span class="text-3xl">💰</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-200">My Expenses</h3>
+                                    <p class="text-sm text-slate-400">View and track your submitted expenses</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card p-6 cursor-pointer">
+                            <div class="flex items-center space-x-4">
+                                <span class="text-3xl">➕</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-200">Submit New Expense</h3>
+                                    <p class="text-sm text-slate-400">Create a new expense submission</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card p-6 cursor-pointer">
+                            <div class="flex items-center space-x-4">
+                                <span class="text-3xl">📊</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-200">Expense Reports</h3>
+                                    <p class="text-sm text-slate-400">View your expense history and reports</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card p-6 cursor-pointer">
+                            <div class="flex items-center space-x-4">
+                                <span class="text-3xl">👤</span>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-200">Profile Settings</h3>
+                                    <p class="text-sm text-slate-400">Update your profile and preferences</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div class="card-3d rounded-3xl p-8 fade-in">
+                    <h2 class="text-2xl font-bold text-slate-200 mb-6">Recent Activity</h2>
+                    <div class="text-center py-12">
+                        <span class="text-6xl mb-4 block">📋</span>
+                        <h3 class="text-lg font-semibold text-slate-300 mb-2">No Recent Activity</h3>
+                        <p class="text-slate-400">Start by submitting your first expense to see activity here.</p>
+                        <button class="btn-3d mt-6 px-6 py-3 rounded-xl font-semibold text-slate-900 relative">
+                            <span class="relative z-10">Submit First Expense</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

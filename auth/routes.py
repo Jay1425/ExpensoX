@@ -61,13 +61,15 @@ def signup():
 			return redirect(url_for("auth.login"))
 
 		currency = get_currency_for_country(form.country.data)
+		# Create company and make user CFO (admin)
 		company = create_company(form.company_name.data, form.country.data, currency)
+		role = "CFO"  # All signups create CFO/Admin accounts
 
 		user = save_user(
 			name=form.name.data,
 			email=form.email.data.lower(),
 			raw_password=form.password.data,
-			role="Admin",
+			role=role,
 			company=company,
 		)
 
@@ -140,6 +142,8 @@ def login():
 			session["pending_user_id"] = user.id
 			flash("Please verify your email before logging in.", "warning")
 			return redirect(url_for("auth.otp_verify"))
+		elif user.role.value != "CFO" and not user.is_admin_created:
+			flash("Access denied. Only admin accounts and users created by admins can log in.", "error")
 		else:
 			session["user_id"] = user.id
 			flash("Welcome back!", "success")
@@ -228,102 +232,33 @@ def dashboard():
 
 	company = user.company
 	currency = company.currency if company else current_app.config.get("DEFAULT_CURRENCY", "USD")
-	role = (user.role or "Employee").lower()
 
-	# Employee-focused summary
-	employee_summary = None
-	if role not in {"manager", "admin"}:
-		employee_query = Expense.query.filter_by(submitted_by_user_id=user.id)
-		recent_expenses = employee_query.order_by(Expense.submitted_at.desc()).limit(5).all()
-		status_counts = {status.name.lower(): 0 for status in ExpenseStatus}
-		for status, count in (
-			db.session.query(Expense.status, func.count(Expense.id))
-			.filter(Expense.submitted_by_user_id == user.id)
-			.group_by(Expense.status)
-			.all()
-		):
-			status_counts[status.name.lower()] = count
-		total_amount = (
-			db.session.query(func.coalesce(func.sum(Expense.amount), 0))
-			.filter(Expense.submitted_by_user_id == user.id)
-			.scalar()
-		)
-		last_submitted = recent_expenses[0] if recent_expenses else None
-		employee_summary = {
-			"recent_expenses": recent_expenses,
-			"status_counts": status_counts,
-			"total_amount": Decimal(total_amount or 0),
-			"total_count": sum(status_counts.values()),
-			"last_submitted": last_submitted,
-		}
-
-	# Manager/Admin summary
-	manager_summary = None
-	if role in {"manager", "admin"} and company:
-		company_expenses = Expense.query.filter_by(company_id=company.id)
-		pending_expenses = company_expenses.filter(Expense.status == ExpenseStatus.PENDING)
-		recent_team_expenses = company_expenses.order_by(Expense.submitted_at.desc()).limit(5).all()
-		status_counts = {status.name.lower(): 0 for status in ExpenseStatus}
-		for status, count in (
-			db.session.query(Expense.status, func.count(Expense.id))
-			.filter(Expense.company_id == company.id)
-			.group_by(Expense.status)
-			.all()
-		):
-			status_counts[status.name.lower()] = count
-		month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-		monthly_total = (
-			db.session.query(func.coalesce(func.sum(Expense.amount), 0))
-			.filter(Expense.company_id == company.id, Expense.submitted_at >= month_start)
-			.scalar()
-		)
-		pending_amount = (
-			db.session.query(func.coalesce(func.sum(Expense.amount), 0))
-			.filter(Expense.company_id == company.id, Expense.status == ExpenseStatus.PENDING)
-			.scalar()
-		)
-		processed_expenses = company_expenses.filter(Expense.decided_at.isnot(None)).all()
-		if processed_expenses:
-			processing_days = [
-				(expense.decided_at - expense.submitted_at).total_seconds() / 86400
-				for expense in processed_expenses
-				if expense.decided_at >= expense.submitted_at
-			]
-			avg_processing_days = round(sum(processing_days) / len(processing_days), 1) if processing_days else None
-		else:
-			avg_processing_days = None
-		team_members = (
-			User.query.filter(User.company_id == company.id)
-			.order_by(User.name.asc())
-			.limit(8)
-			.all()
-		)
-		manager_summary = {
-			"pending_total": pending_expenses.count(),
-			"pending_amount": Decimal(pending_amount or 0),
-			"status_counts": status_counts,
-			"recent_expenses": recent_team_expenses,
-			"team_size": User.query.filter(User.company_id == company.id).count(),
-			"team_members": team_members,
-			"monthly_total": Decimal(monthly_total or 0),
-			"avg_processing_days": avg_processing_days,
-		}
-
-	dashboard_context = {
-		"first_name": user.name.split()[0] if user.name else "there",
-		"role": user.role,
-		"company": company,
-		"currency": currency,
-		"employee": employee_summary,
-		"manager": manager_summary,
+	# Prepare context data
+	context = {
+		'user': user,
+		'company': company,
+		'current_user': user  # For template compatibility
 	}
 
-	return render_template(
-		"auth/index.html",
-		user=user,
-		dashboard=True,
-		dashboard_context=dashboard_context,
-	)
+	# For admin users, add additional data
+	if user.role.value == "CFO":
+		from database.models import User
+		company_users = User.query.filter_by(company_id=company.id).all()
+		context.update({
+			'users': company_users,
+			'total_users': len(company_users)
+		})
+
+	# Role-based dashboard routing
+	role_map = {
+		"CFO": "dashboard/admin_dashboard.html",
+		"DIRECTOR": "dashboard/director_dashboard.html", 
+		"MANAGER": "dashboard/manager_dashboard.html",
+		"FINANCE": "dashboard/finance_dashboard.html",
+		"EMPLOYEE": "dashboard/employee_dashboard.html"
+	}
+	template = role_map.get(user.role.value, "dashboard/employee_dashboard.html")
+	return render_template(template, **context)
 
 
 @auth_bp.route("/logout", methods=["POST"])

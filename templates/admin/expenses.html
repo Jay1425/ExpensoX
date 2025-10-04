@@ -1,0 +1,24 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Expense Overview{% endblock %}
+{% block page_description %}View and manage all expense submissions{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="card-3d rounded-xl p-6">
+        <h3 class="text-xl font-semibold text-white mb-6">All Expenses</h3>
+        
+        <div class="text-center py-12">
+            <i data-lucide="receipt" class="w-16 h-16 text-slate-600 mx-auto mb-4"></i>
+            <h4 class="text-lg font-semibold text-slate-300 mb-2">No Expenses Found</h4>
+            <p class="text-slate-400">Expense submissions will appear here once users start submitting expenses.</p>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
+{% endblock %}

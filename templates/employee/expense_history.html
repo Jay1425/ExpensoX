@@ -1,0 +1,344 @@
+{% extends "employee/layout.html" %}
+
+{% block page_title %}Expense History{% endblock %}
+{% block page_description %}View your submitted expenses and their status{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    <!-- Header with Actions -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Your Expense History</h2>
+            <p class="text-slate-400">Track the status of all your submitted expenses</p>
+        </div>
+        <a href="{{ url_for('employee.submit_expense') }}" 
+           class="btn-primary px-6 py-3 rounded-lg font-semibold text-white flex items-center space-x-2 hover:scale-105 transition-transform duration-200">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+            <span>Submit New Expense</span>
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="card-3d rounded-xl p-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="receipt" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-white">{{ expenses|length }}</p>
+                    <p class="text-sm text-slate-400">Total Expenses</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-3d rounded-xl p-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="clock" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-white">{{ expenses|selectattr('status', 'equalto', 'PENDING')|list|length }}</p>
+                    <p class="text-sm text-slate-400">Pending</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-3d rounded-xl p-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-white">{{ expenses|selectattr('status', 'equalto', 'APPROVED')|list|length }}</p>
+                    <p class="text-sm text-slate-400">Approved</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-3d rounded-xl p-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="x-circle" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-white">{{ expenses|selectattr('status', 'equalto', 'REJECTED')|list|length }}</p>
+                    <p class="text-sm text-slate-400">Rejected</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card-3d rounded-xl p-6">
+        <div class="flex flex-col sm:flex-row gap-4 items-center">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="filter" class="w-5 h-5 text-slate-400"></i>
+                <span class="text-slate-300 font-medium">Filters:</span>
+            </div>
+            
+            <div class="flex flex-wrap gap-3">
+                <button class="filter-btn active" data-status="all">
+                    All Expenses
+                </button>
+                <button class="filter-btn" data-status="PENDING">
+                    <i data-lucide="clock" class="w-4 h-4 mr-1"></i>
+                    Pending
+                </button>
+                <button class="filter-btn" data-status="APPROVED">
+                    <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i>
+                    Approved
+                </button>
+                <button class="filter-btn" data-status="REJECTED">
+                    <i data-lucide="x-circle" class="w-4 h-4 mr-1"></i>
+                    Rejected
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expenses List -->
+    <div class="space-y-4" id="expensesList">
+        {% if expenses %}
+            {% for expense in expenses %}
+                <div class="expense-item card-3d rounded-xl p-6 hover:scale-[1.01] transition-all duration-200" 
+                     data-status="{{ expense.status }}">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <!-- Left Side - Main Info -->
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-white mb-1">
+                                        {{ expense.category.name if expense.category else 'Uncategorized' }}
+                                    </h3>
+                                    <p class="text-slate-400 text-sm">
+                                        Submitted on {{ expense.created_at.strftime('%B %d, %Y at %I:%M %p') if expense.created_at else 'Unknown' }}
+                                    </p>
+                                </div>
+                                
+                                <!-- Status Badge -->
+                                <div class="status-badge status-{{ expense.status.lower() }}">
+                                    {% if expense.status == 'PENDING' %}
+                                        <i data-lucide="clock" class="w-4 h-4"></i>
+                                        <span>Pending</span>
+                                    {% elif expense.status == 'APPROVED' %}
+                                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                        <span>Approved</span>
+                                    {% elif expense.status == 'REJECTED' %}
+                                        <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                        <span>Rejected</span>
+                                    {% else %}
+                                        <i data-lucide="help-circle" class="w-4 h-4"></i>
+                                        <span>{{ expense.status }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <p class="text-slate-500 mb-1">Amount</p>
+                                    <p class="text-white font-medium">
+                                        {{ "%.2f"|format(expense.amount) }} {{ expense.currency }}
+                                        {% if expense.currency != current_user.company.currency %}
+                                            <span class="text-slate-400">
+                                                ({{ "%.2f"|format(expense.converted_amount) }} {{ current_user.company.currency }})
+                                            </span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-slate-500 mb-1">Date</p>
+                                    <p class="text-white font-medium">
+                                        {{ expense.date.strftime('%B %d, %Y') if expense.date else 'Not specified' }}
+                                    </p>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-slate-500 mb-1">Category</p>
+                                    <p class="text-white font-medium">
+                                        {{ expense.category.name if expense.category else 'Uncategorized' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {% if expense.description %}
+                                <div class="mt-3">
+                                    <p class="text-slate-500 text-sm mb-1">Description</p>
+                                    <p class="text-slate-300 text-sm">{{ expense.description[:150] }}{% if expense.description|length > 150 %}...{% endif %}</p>
+                                </div>
+                            {% endif %}
+
+                            {% if expense.comments %}
+                                <div class="mt-3 p-3 bg-slate-800/50 rounded-lg border-l-4 border-blue-500">
+                                    <p class="text-slate-500 text-sm mb-1">Manager Comments</p>
+                                    <p class="text-slate-300 text-sm">{{ expense.comments }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Right Side - Actions -->
+                        <div class="flex items-center space-x-3">
+                            <button class="btn-secondary px-4 py-2 rounded-lg text-sm flex items-center space-x-2 hover:scale-105 transition-transform duration-200"
+                                    onclick="viewExpenseDetails({{ expense.id }})">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                <span>View Details</span>
+                            </button>
+                            
+                            {% if expense.status == 'PENDING' %}
+                                <button class="text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors duration-200"
+                                        onclick="cancelExpense({{ expense.id }})"
+                                        title="Cancel this expense">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="card-3d rounded-xl p-12 text-center">
+                <div class="w-20 h-20 bg-gradient-to-br from-green-500/20 to-emerald-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="receipt" class="w-10 h-10 text-green-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-white mb-2">No expenses submitted yet</h3>
+                <p class="text-slate-400 mb-6">Start by submitting your first expense for approval</p>
+                <a href="{{ url_for('employee.submit_expense') }}" 
+                   class="btn-primary px-6 py-3 rounded-lg font-semibold text-white inline-flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Submit Your First Expense</span>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Expense Details Modal -->
+<div id="expenseModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="card-3d rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-white">Expense Details</h3>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-white">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div id="modalContent">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .filter-btn {
+        @apply px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-600/50 text-slate-300 text-sm font-medium transition-all duration-200 flex items-center hover:border-green-500/50 hover:text-green-300;
+    }
+    
+    .filter-btn.active {
+        @apply bg-green-500/20 border-green-500/50 text-green-300;
+    }
+    
+    .status-badge {
+        @apply px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1;
+    }
+    
+    .status-pending {
+        @apply bg-yellow-500/20 text-yellow-300 border border-yellow-500/30;
+    }
+    
+    .status-approved {
+        @apply bg-green-500/20 text-green-300 border border-green-500/30;
+    }
+    
+    .status-rejected {
+        @apply bg-red-500/20 text-red-300 border border-red-500/30;
+    }
+</style>
+
+<script>
+    // Filter functionality
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const status = this.dataset.status;
+            const expenses = document.querySelectorAll('.expense-item');
+            
+            expenses.forEach(expense => {
+                if (status === 'all' || expense.dataset.status === status) {
+                    expense.style.display = 'block';
+                } else {
+                    expense.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // View expense details
+    function viewExpenseDetails(expenseId) {
+        // For now, show a simple modal. In a real app, you'd fetch details via API
+        const modal = document.getElementById('expenseModal');
+        const content = document.getElementById('modalContent');
+        
+        content.innerHTML = `
+            <div class="space-y-4">
+                <div class="flex items-center space-x-2 text-blue-400">
+                    <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
+                    <span>Loading expense details...</span>
+                </div>
+            </div>
+        `;
+        
+        modal.classList.remove('hidden');
+        
+        // Simulate loading
+        setTimeout(() => {
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <p class="text-slate-300">Detailed expense information would be displayed here.</p>
+                    <p class="text-slate-400 text-sm">Expense ID: ${expenseId}</p>
+                    <p class="text-slate-400 text-sm">This would include full description, receipt images, approval history, etc.</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }, 1000);
+        
+        lucide.createIcons();
+    }
+    
+    // Cancel expense
+    function cancelExpense(expenseId) {
+        if (confirm('Are you sure you want to cancel this expense? This action cannot be undone.')) {
+            // In a real app, you'd make an API call to cancel the expense
+            alert('Cancel functionality would be implemented here.');
+        }
+    }
+    
+    // Close modal
+    function closeModal() {
+        document.getElementById('expenseModal').classList.add('hidden');
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('expenseModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+    
+    // Escape key to close modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+</script>
+{% endblock %}

@@ -5,7 +5,10 @@ from dotenv import load_dotenv
 
 from auth import auth_bp
 from expenses import expenses_bp
-from admin import admin_bp
+from auth.admin_routes import auth_admin_bp
+from dashboard import dashboard_bp
+from blueprints.admin.routes import admin_bp
+from blueprints.employee.routes import employee_bp
 from manager import manager_bp
 from config import Config
 from database.models import bcrypt, db
@@ -30,7 +33,10 @@ def create_app(config_class: type[Config] = Config) -> Flask:
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(expenses_bp)
+    app.register_blueprint(auth_admin_bp, url_prefix='/auth-admin')
+    app.register_blueprint(dashboard_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(employee_bp)
     app.register_blueprint(manager_bp)
 
     @app.shell_context_processor

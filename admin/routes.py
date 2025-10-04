@@ -86,7 +86,8 @@ def create_user():
 			company_id=current_user.company_id,
 			is_manager_approver=is_manager,
 			manager_id=int(manager_id) if manager_id else None,
-			is_verified=True  # Admin-created users are auto-verified
+			is_verified=True,  # Admin-created users are auto-verified
+			is_admin_created=True  # Mark as created by admin
 		)
 		
 		# Set default password (user will need to reset)
