@@ -48,7 +48,6 @@ class User(db.Model):
 	manager_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 	is_verified = db.Column(db.Boolean, default=False, nullable=False)
 	is_admin_created = db.Column(db.Boolean, default=False, nullable=False)  # Track if created by admin
-	is_manager_approver = db.Column(db.Boolean, default=True, nullable=False)  # Enable manager-first approval
 	otp_code = db.Column(db.String(6), nullable=True)
 	otp_expiry = db.Column(db.DateTime, nullable=True)
 	created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
