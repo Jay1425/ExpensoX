@@ -1,132 +1,380 @@
-{% extends "base.html" %}
-
-{% block title %}Submit Expense - ExpensoX{% endblock %}
-
-{% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-8 mx-auto">
-            <div class="card">
-                <div class="card-header">
-                    <h4><i class="fas fa-plus me-2"></i>Submit New Expense</h4>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Expense - ExpensoX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-cyan': '#2dd4bf',
+                        'neon-purple': '#7c3aed',
+                        'neon-pink': '#ec4899',
+                        'neon-green': '#10b981',
+                        'dark-bg': '#0f1720',
+                        'dark-card': '#111827',
+                    },
+                    animation: {
+                        'glow-pulse': 'glow-pulse 3.5s ease-in-out infinite alternate',
+                        'float': 'float 4s ease-in-out infinite',
+                        'neon-flicker': 'neon-flicker 3s infinite alternate',
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 6px rgba(45,212,191,0.6), 0 0 12px rgba(45,212,191,0.35)',
+                        'neon-purple': '0 0 6px rgba(124,58,237,0.6), 0 0 12px rgba(124,58,237,0.3)',
+                        'neon-pink': '0 0 6px rgba(236,72,153,0.55), 0 0 10px rgba(236,72,153,0.25)',
+                        'neon-green': '0 0 6px rgba(16,185,129,0.55), 0 0 10px rgba(16,185,129,0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes glow-pulse {
+            from { text-shadow: 0 0 3px rgba(45,212,191,0.6), 0 0 6px rgba(45,212,191,0.35); }
+            to { text-shadow: 0 0 6px rgba(45,212,191,0.5), 0 0 9px rgba(45,212,191,0.25); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes neon-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.92; }
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 3px rgba(255,255,255,0.06), 0 0 6px rgba(255,255,255,0.04);
+        }
+        
+        .feature-card {
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: transform 0.28s ease, box-shadow 0.28s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 6px 18px rgba(2,6,23,0.5);
+        }
+        
+        .btn-neon {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+        
+        .btn-neon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+            transition: left 0.42s ease;
+        }
+        
+        .btn-neon:hover::before {
+            left: 100%;
+        }
+        
+        .input-field {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            border-color: #2dd4bf;
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
+            outline: none;
+        }
+        
+        .bg-gradient-neon {
+            background: radial-gradient(ellipse at center, rgba(45,212,191,0.06) 0%, rgba(124,58,237,0.05) 35%, rgba(236,72,153,0.05) 70%, rgba(15,23,32,1) 100%);
+        }
+        
+        .expense-icon-3d {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #2dd4bf, #7c3aed, #ec4899);
+            border-radius: 20px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: float 4s ease-in-out infinite;
+            box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+        }
+        
+        .expense-icon-3d::before {
+            content: '💰';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateZ(20px);
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45));
+        }
+        
+        .file-upload-area {
+            border: 2px dashed rgba(45, 212, 191, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload-area:hover {
+            border-color: rgba(45, 212, 191, 0.6);
+            background-color: rgba(45, 212, 191, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-white min-h-screen bg-gradient-neon">
+    <!-- Navigation -->
+    <nav class="fixed inset-x-0 top-0 z-50 bg-dark-card bg-opacity-95 backdrop-blur-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="text-2xl font-bold text-neon-cyan neon-text animate-neon-flicker">
+                        ExpensoX
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('employee.submit_expense') }}" enctype="multipart/form-data">
-                        {{ csrf_token() }}
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="title" class="form-label">Expense Title</label>
-                                <input type="text" class="form-control" id="title" name="title" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="category" class="form-label">Category</label>
-                                <select class="form-select" id="category" name="category" required>
-                                    <option value="">Select Category</option>
-                                    <option value="travel">Travel</option>
-                                    <option value="meals">Meals & Entertainment</option>
-                                    <option value="office_supplies">Office Supplies</option>
-                                    <option value="software">Software & Subscriptions</option>
-                                    <option value="training">Training & Development</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="amount" class="form-label">Amount</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="amount" name="amount" 
-                                           step="0.01" min="0" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="currency" class="form-label">Currency</label>
-                                <select class="form-select" id="currency" name="currency" required>
-                                    <option value="USD">USD - US Dollar</option>
-                                    <option value="EUR">EUR - Euro</option>
-                                    <option value="GBP">GBP - British Pound</option>
-                                    <option value="CAD">CAD - Canadian Dollar</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="expense_date" class="form-label">Expense Date</label>
-                            <input type="date" class="form-control" id="expense_date" name="expense_date" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3" 
-                                      placeholder="Provide details about this expense..."></textarea>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="receipt" class="form-label">Receipt/Invoice</label>
-                            <input type="file" class="form-control" id="receipt" name="receipt" 
-                                   accept="image/*,.pdf" multiple>
-                            <div class="form-text">
-                                Upload receipt images or PDF files. Multiple files supported.
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="reimbursable" name="reimbursable" checked>
-                                <label class="form-check-label" for="reimbursable">
-                                    This expense is reimbursable
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="urgent" name="urgent">
-                                <label class="form-check-label" for="urgent">
-                                    Mark as urgent (requires expedited approval)
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('employee.expenses') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Back to Expenses
-                            </a>
-                            <div>
-                                <button type="button" class="btn btn-outline-primary me-2" id="saveAsDraft">
-                                    <i class="fas fa-save me-2"></i>Save as Draft
-                                </button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane me-2"></i>Submit for Approval
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('employee.expenses') }}" class="text-gray-300 hover:text-neon-cyan transition-colors duration-300 px-3 py-2 text-sm font-medium">My Expenses</a>
+                    <a href="{{ url_for('employee.submit_expense') }}" class="text-neon-cyan hover:text-neon-purple transition-colors duration-300 px-3 py-2 text-sm font-medium">Submit Expense</a>
+                    <a href="{{ url_for('auth.profile') }}" class="text-gray-300 hover:text-neon-cyan transition-colors duration-300 px-3 py-2 text-sm font-medium">Profile</a>
+                    <a href="{{ url_for('auth.logout') }}" class="bg-gradient-to-r from-neon-pink to-red-500 text-white px-4 py-2 rounded-lg font-medium hover:shadow-neon-pink transition-all duration-300 btn-neon">Logout</a>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </nav>
 
-{% block extra_js %}
-<script>
-    // Auto-fill today's date
-    document.getElementById('expense_date').valueAsDate = new Date();
-    
-    // Save as draft functionality
-    document.getElementById('saveAsDraft').addEventListener('click', function() {
-        // Add hidden input to indicate draft status
-        const form = document.querySelector('form');
-        const draftInput = document.createElement('input');
-        draftInput.type = 'hidden';
-        draftInput.name = 'save_as_draft';
-        draftInput.value = 'true';
-        form.appendChild(draftInput);
-        form.submit();
-    });
-</script>
-{% endblock %}
-{% endblock %}
+    <!-- Main Content -->
+    <div class="pt-20 pb-12">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header Section -->
+            <div class="text-center mb-8">
+                <div class="flex justify-center mb-4">
+                    <div class="expense-icon-3d"></div>
+                </div>
+                <h1 class="text-4xl font-bold text-neon-cyan neon-text animate-glow-pulse">Submit New Expense</h1>
+                <p class="text-gray-400 mt-2">Create and submit your expense for approval</p>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="mb-6 p-4 rounded-lg {% if category == 'danger' %}bg-red-600{% elif category == 'success' %}bg-green-600{% else %}bg-blue-600{% endif %} bg-opacity-20 border {% if category == 'danger' %}border-red-500{% elif category == 'success' %}border-green-500{% else %}border-blue-500{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Expense Form -->
+            <div class="feature-card bg-dark-card bg-opacity-50 rounded-xl p-8">
+                <form method="POST" action="{{ url_for('employee.submit_expense') }}" enctype="multipart/form-data" class="space-y-6">
+                    {{ csrf_token() }}
+                    
+                    <!-- Basic Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="title" class="block text-sm font-medium text-gray-300 mb-2">Expense Title</label>
+                            <input type="text" id="title" name="title" required
+                                   class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                   placeholder="Enter expense title">
+                        </div>
+                        <div>
+                            <label for="category" class="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                            <select id="category" name="category" required class="input-field w-full px-4 py-3 rounded-lg text-white">
+                                <option value="">Select Category</option>
+                                <option value="travel">Travel</option>
+                                <option value="meals">Meals & Entertainment</option>
+                                <option value="office_supplies">Office Supplies</option>
+                                <option value="software">Software & Subscriptions</option>
+                                <option value="training">Training & Development</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Amount and Currency -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-300 mb-2">Amount</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-neon-green">$</span>
+                                </div>
+                                <input type="number" id="amount" name="amount" step="0.01" min="0" required
+                                       class="input-field w-full pl-10 pr-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                       placeholder="0.00">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="currency" class="block text-sm font-medium text-gray-300 mb-2">Currency</label>
+                            <select id="currency" name="currency" required class="input-field w-full px-4 py-3 rounded-lg text-white">
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - British Pound</option>
+                                <option value="CAD">CAD - Canadian Dollar</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label for="expense_date" class="block text-sm font-medium text-gray-300 mb-2">Expense Date</label>
+                        <input type="date" id="expense_date" name="expense_date" required
+                               class="input-field w-full px-4 py-3 rounded-lg text-white">
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                        <textarea id="description" name="description" rows="4"
+                                  class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500 resize-none"
+                                  placeholder="Provide details about this expense..."></textarea>
+                    </div>
+
+                    <!-- Receipt Upload -->
+                    <div>
+                        <label for="receipt" class="block text-sm font-medium text-gray-300 mb-2">Receipt/Invoice</label>
+                        <div class="file-upload-area rounded-lg p-6 text-center">
+                            <input type="file" id="receipt" name="receipt" accept="image/*,.pdf" multiple class="hidden">
+                            <div class="cursor-pointer" onclick="document.getElementById('receipt').click()">
+                                <svg class="w-12 h-12 mx-auto mb-4 text-neon-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <p class="text-neon-cyan font-semibold">Click to upload receipts</p>
+                                <p class="text-gray-400 text-sm mt-1">or drag and drop files here</p>
+                                <p class="text-gray-500 text-xs mt-2">Supports images and PDF files (multiple files allowed)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="reimbursable" name="reimbursable" checked
+                                   class="w-4 h-4 text-neon-cyan bg-transparent border-gray-600 rounded focus:ring-neon-cyan">
+                            <label for="reimbursable" class="ml-3 text-gray-300">
+                                This expense is reimbursable
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="urgent" name="urgent"
+                                   class="w-4 h-4 text-neon-cyan bg-transparent border-gray-600 rounded focus:ring-neon-cyan">
+                            <label for="urgent" class="ml-3 text-gray-300">
+                                Mark as urgent (requires expedited approval)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row justify-between gap-4 pt-6">
+                        <a href="{{ url_for('employee.expenses') }}" 
+                           class="text-center border-2 border-gray-600 text-gray-300 px-6 py-3 rounded-lg font-semibold hover:border-gray-500 hover:text-white transition-all duration-300">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            Back to Expenses
+                        </a>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button type="button" id="saveAsDraft"
+                                    class="border-2 border-neon-purple text-neon-purple px-6 py-3 rounded-lg font-semibold hover:bg-neon-purple hover:text-white transition-all duration-300 btn-neon">
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                Save as Draft
+                            </button>
+                            <button type="submit"
+                                    class="bg-gradient-to-r from-neon-cyan to-neon-purple text-white px-6 py-3 rounded-lg font-semibold hover:shadow-neon-cyan transform hover:scale-105 transition-all duration-300 btn-neon">
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                                Submit for Approval
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-fill today's date
+        document.getElementById('expense_date').valueAsDate = new Date();
+        
+        // Save as draft functionality
+        document.getElementById('saveAsDraft').addEventListener('click', function() {
+            // Add hidden input to indicate draft status
+            const form = document.querySelector('form');
+            const draftInput = document.createElement('input');
+            draftInput.type = 'hidden';
+            draftInput.name = 'save_as_draft';
+            draftInput.value = 'true';
+            form.appendChild(draftInput);
+            form.submit();
+        });
+
+        // File upload handling
+        document.getElementById('receipt').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                const fileNames = Array.from(files).map(f => f.name).join(', ');
+                const uploadArea = e.target.parentNode.querySelector('div');
+                uploadArea.innerHTML = `
+                    <svg class="w-8 h-8 mx-auto mb-2 text-neon-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-neon-green font-semibold">Files uploaded successfully</p>
+                    <p class="text-gray-400 text-sm mt-1">${fileNames}</p>
+                    <p class="text-gray-500 text-xs mt-2 cursor-pointer hover:text-neon-cyan" onclick="document.getElementById('receipt').click()">Click to change files</p>
+                `;
+            }
+        });
+
+        // Drag and drop functionality
+        const uploadArea = document.querySelector('.file-upload-area');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            uploadArea.classList.add('border-neon-cyan');
+        }
+        
+        function unhighlight() {
+            uploadArea.classList.remove('border-neon-cyan');
+        }
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            document.getElementById('receipt').files = files;
+            document.getElementById('receipt').dispatchEvent(new Event('change'));
+        }
+    </script>
+</body>
+</html>
