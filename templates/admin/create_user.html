@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}Create User{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .form-section h6 {
+        color: #495057;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .role-option {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 1rem;
+    }
+    .role-option:hover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+    .role-option.active {
+        border-color: #007bff;
+        background-color: #e3f2fd;
+    }
+    .role-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Create New User</h1>
+                    <p class="text-muted">Add a new employee or manager to your organization</p>
+                </div>
+                <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Users
+                </a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" id="createUserForm">
+                        <!-- Basic Information -->
+                        <div class="form-section">
+                            <h6><i class="fas fa-user me-2"></i>Basic Information</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">Full Name *</label>
+                                        <input type="text" class="form-control" id="name" name="name" 
+                                               placeholder="Enter full name" required>
+                                        <div class="form-text">This will be the user's display name</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email Address *</label>
+                                        <input type="email" class="form-control" id="email" name="email" 
+                                               placeholder="user@company.com" required>
+                                        <div class="form-text">This will be used for login and notifications</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">Temporary Password *</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="password" name="password" 
+                                                   placeholder="Enter temporary password" required>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                                <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">User should change this on first login</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Account Status</label>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="is_active" 
+                                                   name="is_active" checked>
+                                            <label class="form-check-label" for="is_active">
+                                                Active Account
+                                            </label>
+                                        </div>
+                                        <div class="form-text">Inactive users cannot log in</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Role Selection -->
+                        <div class="form-section">
+                            <h6><i class="fas fa-user-tag me-2"></i>Role Assignment</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="role-option" onclick="selectRole('MANAGER')">
+                                        <input type="radio" name="role" value="MANAGER" id="roleManager" required>
+                                        <label for="roleManager" class="w-100 mb-0">
+                                            <div class="text-center">
+                                                <i class="fas fa-users role-icon text-success"></i>
+                                                <h6>Manager</h6>
+                                                <p class="text-muted mb-0">Can manage team members and approve expenses</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="role-option" onclick="selectRole('EMPLOYEE')">
+                                        <input type="radio" name="role" value="EMPLOYEE" id="roleEmployee" required>
+                                        <label for="roleEmployee" class="w-100 mb-0">
+                                            <div class="text-center">
+                                                <i class="fas fa-user role-icon text-info"></i>
+                                                <h6>Employee</h6>
+                                                <p class="text-muted mb-0">Can submit and track expense reports</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manager Assignment (for employees) -->
+                        <div class="form-section" id="managerSection" style="display: none;">
+                            <h6><i class="fas fa-sitemap me-2"></i>Reporting Structure</h6>
+                            <div class="mb-3">
+                                <label for="manager_id" class="form-label">Select Manager</label>
+                                <select class="form-select" id="manager_id" name="manager_id">
+                                    <option value="">Choose a manager...</option>
+                                    {% for manager in managers %}
+                                    <option value="{{ manager.id }}">{{ manager.name }} ({{ manager.email }})</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">This person will approve the employee's expense reports</div>
+                            </div>
+                        </div>
+
+                        <!-- Password Requirements -->
+                        <div class="form-section">
+                            <h6><i class="fas fa-shield-alt me-2"></i>Security Requirements</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="password-requirements">
+                                        <small class="text-muted">Password must contain:</small>
+                                        <ul class="list-unstyled small text-muted mt-2">
+                                            <li><i class="fas fa-check text-success me-2"></i>At least 8 characters</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>One uppercase letter</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>One lowercase letter</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>One number</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sendWelcome" checked>
+                                        <label class="form-check-label" for="sendWelcome">
+                                            Send welcome email with login instructions
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="forcePasswordChange" checked>
+                                        <label class="form-check-label" for="forcePasswordChange">
+                                            Force password change on first login
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                                <i class="fas fa-undo me-2"></i>Reset Form
+                            </button>
+                            <div>
+                                <a href="{{ url_for('admin.users') }}" class="btn btn-secondary me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Create User
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectRole(role) {
+    // Remove active class from all role options
+    document.querySelectorAll('.role-option').forEach(option => {
+        option.classList.remove('active');
+    });
+    
+    // Add active class to selected option
+    event.currentTarget.classList.add('active');
+    
+    // Check the radio button
+    document.getElementById(`role${role.charAt(0) + role.slice(1).toLowerCase()}`).checked = true;
+    
+    // Show/hide manager selection based on role
+    const managerSection = document.getElementById('managerSection');
+    if (role === 'EMPLOYEE') {
+        managerSection.style.display = 'block';
+        document.getElementById('manager_id').required = true;
+    } else {
+        managerSection.style.display = 'none';
+        document.getElementById('manager_id').required = false;
+        document.getElementById('manager_id').value = '';
+    }
+}
+
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('passwordToggleIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+
+function resetForm() {
+    if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+        document.getElementById('createUserForm').reset();
+        document.querySelectorAll('.role-option').forEach(option => {
+            option.classList.remove('active');
+        });
+        document.getElementById('managerSection').style.display = 'none';
+    }
+}
+
+// Form validation
+document.getElementById('createUserForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const role = document.querySelector('input[name="role"]:checked');
+    
+    // Check if role is selected
+    if (!role) {
+        e.preventDefault();
+        alert('Please select a role for the user.');
+        return;
+    }
+    
+    // Check if manager is selected for employees
+    if (role.value === 'EMPLOYEE') {
+        const managerId = document.getElementById('manager_id').value;
+        if (!managerId) {
+            e.preventDefault();
+            alert('Please select a manager for the employee.');
+            return;
+        }
+    }
+    
+    // Basic password validation
+    if (password.length < 8) {
+        e.preventDefault();
+        alert('Password must be at least 8 characters long.');
+        return;
+    }
+});
+
+// Real-time password validation
+document.getElementById('password').addEventListener('input', function() {
+    const password = this.value;
+    const requirements = document.querySelectorAll('.password-requirements li i');
+    
+    // Length check
+    if (password.length >= 8) {
+        requirements[0].className = 'fas fa-check text-success me-2';
+    } else {
+        requirements[0].className = 'fas fa-times text-danger me-2';
+    }
+    
+    // Uppercase check
+    if (/[A-Z]/.test(password)) {
+        requirements[1].className = 'fas fa-check text-success me-2';
+    } else {
+        requirements[1].className = 'fas fa-times text-danger me-2';
+    }
+    
+    // Lowercase check
+    if (/[a-z]/.test(password)) {
+        requirements[2].className = 'fas fa-check text-success me-2';
+    } else {
+        requirements[2].className = 'fas fa-times text-danger me-2';
+    }
+    
+    // Number check
+    if (/\d/.test(password)) {
+        requirements[3].className = 'fas fa-check text-success me-2';
+    } else {
+        requirements[3].className = 'fas fa-times text-danger me-2';
+    }
+});
+</script>
+{% endblock %}

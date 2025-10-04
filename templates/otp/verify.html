@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Your Email - ExpensoX{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h4>
+                        <i class="fas fa-shield-alt text-primary me-2"></i>
+                        {% if otp_type == 'signup' %}
+                            Verify Your Email
+                        {% elif otp_type == 'login' %}
+                            Two-Factor Authentication
+                        {% elif otp_type == 'password_reset' %}
+                            Reset Password Verification
+                        {% else %}
+                            Email Verification
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="avatar bg-primary rounded-circle mx-auto mb-3" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                            <span class="text-white h4 mb-0">{{ user.first_name[0] }}{{ user.last_name[0] }}</span>
+                        </div>
+                        <p class="text-muted">
+                            {% if otp_type == 'signup' %}
+                                We've sent a verification code to <strong>{{ user.email }}</strong>
+                            {% elif otp_type == 'login' %}
+                                Enter the verification code sent to <strong>{{ user.email }}</strong>
+                            {% elif otp_type == 'password_reset' %}
+                                Enter the verification code sent to <strong>{{ user.email }}</strong> to reset your password
+                            {% else %}
+                                Enter the verification code sent to <strong>{{ user.email }}</strong>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <form id="otpForm">
+                        <input type="hidden" id="otp_type" value="{{ otp_type }}">
+                        <input type="hidden" id="user_id" value="{{ user.id }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="otp_code" class="form-label">Verification Code</label>
+                            <input type="text" class="form-control form-control-lg text-center" id="otp_code" 
+                                   name="otp_code" placeholder="000000" maxlength="6" pattern="[0-9]{6}" 
+                                   style="letter-spacing: 0.3em; font-size: 1.2rem;" required>
+                            <div class="form-text">Enter the 6-digit code sent to your email</div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="verifyBtn">
+                                <i class="fas fa-check me-2"></i>Verify Code
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <p class="text-muted small mb-2">Didn't receive the code?</p>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="resendBtn">
+                            <i class="fas fa-redo me-2"></i>Resend Code
+                        </button>
+                    </div>
+
+                    {% if otp_status %}
+                    <div class="mt-4">
+                        <div class="card bg-light">
+                            <div class="card-body small">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong>Attempts:</strong> {{ otp_status.get('attempts_used', 0) }} / {{ otp_status.get('max_attempts', 5) }}
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>Expires:</strong> 
+                                        {% if otp_status.get('expires_at') %}
+                                            <span id="countdown"></span>
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-link">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('otpForm');
+    const otpInput = document.getElementById('otp_code');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const resendBtn = document.getElementById('resendBtn');
+    const otpType = document.getElementById('otp_type').value;
+    const userId = document.getElementById('user_id').value;
+
+    // Auto-focus on OTP input
+    otpInput.focus();
+
+    // Format OTP input (numbers only)
+    otpInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/[^0-9]/g, '');
+        if (value.length > 6) value = value.slice(0, 6);
+        e.target.value = value;
+        
+        // Auto-submit when 6 digits entered
+        if (value.length === 6) {
+            form.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const otpCode = otpInput.value.trim();
+        if (otpCode.length !== 6) {
+            showAlert('Please enter a 6-digit verification code.', 'warning');
+            return;
+        }
+
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verifying...';
+
+        fetch('/otp/verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+            },
+            body: JSON.stringify({
+                otp_type: otpType,
+                otp_code: otpCode,
+                user_id: parseInt(userId)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+                setTimeout(() => {
+                    // Redirect based on OTP type
+                    if (otpType === 'signup') {
+                        window.location.href = '{{ url_for("auth.login") }}';
+                    } else if (otpType === 'password_reset') {
+                        window.location.href = '{{ url_for("auth.reset_password") }}';
+                    } else {
+                        window.location.href = '{{ url_for("main.dashboard") }}';
+                    }
+                }, 1500);
+            } else {
+                showAlert(data.message, 'danger');
+                otpInput.value = '';
+                otpInput.focus();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred. Please try again.', 'danger');
+        })
+        .finally(() => {
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = '<i class="fas fa-check me-2"></i>Verify Code';
+        });
+    });
+
+    // Handle resend button
+    resendBtn.addEventListener('click', function() {
+        resendBtn.disabled = true;
+        resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+
+        fetch('/otp/resend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+            },
+            body: JSON.stringify({
+                otp_type: otpType,
+                user_id: parseInt(userId)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showAlert(data.message, data.success ? 'success' : 'danger');
+            if (data.success) {
+                // Start cooldown timer
+                startResendCooldown();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred. Please try again.', 'danger');
+        })
+        .finally(() => {
+            resendBtn.disabled = false;
+            resendBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Resend Code';
+        });
+    });
+
+    // Show alert messages
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at top of card body
+        const cardBody = document.querySelector('.card-body');
+        cardBody.insertBefore(alertDiv, cardBody.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    // Resend cooldown timer
+    function startResendCooldown() {
+        let countdown = 30;
+        resendBtn.disabled = true;
+        
+        const interval = setInterval(() => {
+            resendBtn.innerHTML = `<i class="fas fa-clock me-2"></i>Resend in ${countdown}s`;
+            countdown--;
+            
+            if (countdown < 0) {
+                clearInterval(interval);
+                resendBtn.disabled = false;
+                resendBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Resend Code';
+            }
+        }, 1000);
+    }
+
+    // Countdown timer for expiration
+    {% if otp_status and otp_status.get('expires_at') %}
+    function updateCountdown() {
+        const expiresAt = new Date('{{ otp_status.expires_at }}');
+        const now = new Date();
+        const diff = expiresAt - now;
+        
+        if (diff > 0) {
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            document.getElementById('countdown').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            setTimeout(updateCountdown, 1000);
+        } else {
+            document.getElementById('countdown').textContent = 'Expired';
+            showAlert('Verification code has expired. Please request a new one.', 'warning');
+            form.style.display = 'none';
+        }
+    }
+    updateCountdown();
+    {% endif %}
+});
+</script>
+{% endblock %}

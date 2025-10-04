@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        border-left: 4px solid;
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    .quick-action-card {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+        height: 100%;
+    }
+    .quick-action-card:hover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+    }
+    .activity-item {
+        border-left: 3px solid #007bff;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Admin Dashboard</h1>
+            <p class="text-muted">Welcome back! Here's an overview of your system.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-plus me-2"></i>Quick Actions
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('admin.create_user') }}">
+                        <i class="fas fa-user-plus me-2"></i>Add User
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.create_or_update_flow') }}">
+                        <i class="fas fa-project-diagram me-2"></i>Create Flow
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.create_or_update_rule') }}">
+                        <i class="fas fa-gavel me-2"></i>Add Rule
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stats-number text-primary">{{ stats.user_count }}</div>
+                            <div class="text-muted">Total Users</div>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>+12% from last month
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stats-number text-success">{{ stats.flow_count }}</div>
+                            <div class="text-muted">Approval Flows</div>
+                            <small class="text-info">
+                                <i class="fas fa-info-circle me-1"></i>{{ stats.flow_count }} active flows
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-project-diagram fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stats-number text-warning">{{ stats.rule_count }}</div>
+                            <div class="text-muted">Approval Rules</div>
+                            <small class="text-warning">
+                                <i class="fas fa-cog me-1"></i>Automation enabled
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-gavel fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stats-number text-info">85%</div>
+                            <div class="text-muted">System Health</div>
+                            <small class="text-success">
+                                <i class="fas fa-check-circle me-1"></i>All systems operational
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-heartbeat fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quick Actions -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="quick-action-card" onclick="location.href='{{ url_for('admin.users') }}'">
+                                <i class="fas fa-users fa-2x text-primary mb-3"></i>
+                                <h6>Manage Users</h6>
+                                <p class="text-muted small mb-0">Add, edit, or deactivate user accounts</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="quick-action-card" onclick="location.href='{{ url_for('admin.approval_flows') }}'">
+                                <i class="fas fa-project-diagram fa-2x text-success mb-3"></i>
+                                <h6>Approval Flows</h6>
+                                <p class="text-muted small mb-0">Configure expense approval workflows</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="quick-action-card" onclick="location.href='{{ url_for('admin.approval_rules') }}'">
+                                <i class="fas fa-gavel fa-2x text-warning mb-3"></i>
+                                <h6>Approval Rules</h6>
+                                <p class="text-muted small mb-0">Set up automatic approval conditions</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="quick-action-card" onclick="viewReports()">
+                                <i class="fas fa-chart-bar fa-2x text-info mb-3"></i>
+                                <h6>Reports</h6>
+                                <p class="text-muted small mb-0">View system and expense reports</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="quick-action-card" onclick="systemSettings()">
+                                <i class="fas fa-cogs fa-2x text-secondary mb-3"></i>
+                                <h6>System Settings</h6>
+                                <p class="text-muted small mb-0">Configure global system preferences</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="quick-action-card" onclick="auditLogs()">
+                                <i class="fas fa-clipboard-list fa-2x text-dark mb-3"></i>
+                                <h6>Audit Logs</h6>
+                                <p class="text-muted small mb-0">Review system activity and changes</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Recent Activity
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>New user created</strong>
+                                <div class="text-muted small">John Smith added as Manager</div>
+                            </div>
+                            <small class="text-muted">2h ago</small>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>Approval flow updated</strong>
+                                <div class="text-muted small">Travel approval flow modified</div>
+                            </div>
+                            <small class="text-muted">4h ago</small>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>New approval rule</strong>
+                                <div class="text-muted small">Auto-approve rule for office supplies</div>
+                            </div>
+                            <small class="text-muted">1d ago</small>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>System maintenance</strong>
+                                <div class="text-muted small">Database optimization completed</div>
+                            </div>
+                            <small class="text-muted">2d ago</small>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="#" class="btn btn-outline-primary btn-sm">View All Activity</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Analytics -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>User Growth
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="userGrowthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Approval Distribution
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="approvalChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health and Alerts -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-server me-2"></i>System Health
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="mb-2">
+                                <i class="fas fa-database fa-2x text-success"></i>
+                            </div>
+                            <h6>Database</h6>
+                            <span class="badge bg-success">Healthy</span>
+                            <div class="small text-muted mt-1">99.9% uptime</div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="mb-2">
+                                <i class="fas fa-envelope fa-2x text-success"></i>
+                            </div>
+                            <h6>Email Service</h6>
+                            <span class="badge bg-success">Operational</span>
+                            <div class="small text-muted mt-1">245 emails sent today</div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="mb-2">
+                                <i class="fas fa-shield-alt fa-2x text-warning"></i>
+                            </div>
+                            <h6>Security</h6>
+                            <span class="badge bg-warning">Monitoring</span>
+                            <div class="small text-muted mt-1">No threats detected</div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="mb-2">
+                                <i class="fas fa-hdd fa-2x text-info"></i>
+                            </div>
+                            <h6>Storage</h6>
+                            <span class="badge bg-info">75% Used</span>
+                            <div class="small text-muted mt-1">2.5GB available</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>System Alerts
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning alert-sm">
+                        <i class="fas fa-clock me-2"></i>
+                        <strong>Scheduled Maintenance</strong><br>
+                        <small>System maintenance scheduled for tonight at 2 AM EST</small>
+                    </div>
+                    <div class="alert alert-info alert-sm">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Feature Update</strong><br>
+                        <small>New approval workflow features available</small>
+                    </div>
+                    <div class="text-center">
+                        <a href="#" class="btn btn-outline-secondary btn-sm">View All Alerts</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// User Growth Chart
+const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+new Chart(userGrowthCtx, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+            label: 'Users',
+            data: [5, 12, 19, 28, 35, {{ stats.user_count }}],
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            borderWidth: 2,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Approval Distribution Chart
+const approvalCtx = document.getElementById('approvalChart').getContext('2d');
+new Chart(approvalCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Auto-Approved', 'Manual Review', 'Rejected'],
+        datasets: [{
+            data: [65, 25, 10],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+function refreshDashboard() {
+    // Show loading indicator
+    const refreshBtn = document.querySelector('[onclick="refreshDashboard()"]');
+    const originalContent = refreshBtn.innerHTML;
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
+    refreshBtn.disabled = true;
+    
+    // Simulate refresh delay
+    setTimeout(() => {
+        refreshBtn.innerHTML = originalContent;
+        refreshBtn.disabled = false;
+        
+        // Show success message
+        const alertHtml = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Dashboard refreshed successfully!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.querySelector('.container-fluid').insertAdjacentHTML('afterbegin', alertHtml);
+        
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => {
+            const alert = document.querySelector('.alert-success');
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 3000);
+    }, 2000);
+}
+
+function viewReports() {
+    alert('Reports functionality would be implemented here with comprehensive analytics and export options.');
+}
+
+function systemSettings() {
+    alert('System settings would include global configurations, integrations, and preferences.');
+}
+
+function auditLogs() {
+    alert('Audit logs would show detailed system activity, user actions, and security events.');
+}
+
+// Real-time updates simulation
+function simulateRealTimeUpdates() {
+    // Simulate activity updates every 30 seconds
+    setInterval(() => {
+        // This would normally fetch real data from the server
+        console.log('Checking for real-time updates...');
+    }, 30000);
+}
+
+// Initialize real-time updates
+document.addEventListener('DOMContentLoaded', function() {
+    simulateRealTimeUpdates();
+});
+</script>
+{% endblock %}

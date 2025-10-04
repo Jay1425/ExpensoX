@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Dashboard - ExpensoX{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Manager Dashboard</h1>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('manager.pending_approvals') }}" class="btn btn-outline-primary">
+                <i class="fas fa-clock"></i> Pending Approvals
+            </a>
+            <a href="{{ url_for('manager.team_expenses') }}" class="btn btn-outline-success">
+                <i class="fas fa-users"></i> Team Expenses
+            </a>
+            <a href="{{ url_for('manager.reports') }}" class="btn btn-outline-info">
+                <i class="fas fa-chart-bar"></i> Reports
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Pending Approvals</h5>
+                            <h2 class="mb-0">{{ pending_count }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Team Members</h5>
+                            <h2 class="mb-0">{{ team_size }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">This Month</h5>
+                            <h2 class="mb-0">${{ "{:,.2f}".format(monthly_total) }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Avg. Processing</h5>
+                            <h2 class="mb-0">{{ avg_processing_days }} days</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-stopwatch fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Expenses -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Team Expenses</h5>
+                    <a href="{{ url_for('manager.team_expenses') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_expenses %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Amount</th>
+                                        <th>Category</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for expense in recent_expenses %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar bg-secondary rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                    <span class="text-white small">{{ expense.submitter.first_name[0] }}{{ expense.submitter.last_name[0] }}</span>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-medium">{{ expense.submitter.first_name }} {{ expense.submitter.last_name }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>${{ "{:,.2f}".format(expense.amount) }}</td>
+                                        <td>{{ expense.category.name if expense.category else 'N/A' }}</td>
+                                        <td>{{ expense.expense_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            {% if expense.status.value == 'PENDING' %}
+                                                <span class="badge bg-warning">{{ expense.status.value }}</span>
+                                            {% elif expense.status.value == 'APPROVED' %}
+                                                <span class="badge bg-success">{{ expense.status.value }}</span>
+                                            {% elif expense.status.value == 'REJECTED' %}
+                                                <span class="badge bg-danger">{{ expense.status.value }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ expense.status.value }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('manager.approval_detail', expense_id=expense.id) }}" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if expense.status.value == 'PENDING' %}
+                                                <button type="button" class="btn btn-outline-success btn-sm" onclick="approveExpense({{ expense.id }})">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="rejectExpense({{ expense.id }})">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No team expenses found.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('manager.pending_approvals') }}" class="btn btn-primary">
+                            <i class="fas fa-clock me-2"></i>Review Pending Approvals
+                        </a>
+                        <a href="{{ url_for('manager.team_expenses') }}" class="btn btn-success">
+                            <i class="fas fa-users me-2"></i>View Team Expenses
+                        </a>
+                        <a href="{{ url_for('manager.reports') }}" class="btn btn-info">
+                            <i class="fas fa-chart-bar me-2"></i>Generate Reports
+                        </a>
+                        <hr>
+                        <a href="{{ url_for('employee.submit_expense') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-2"></i>Submit Expense
+                        </a>
+                        <a href="{{ url_for('employee.dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-user me-2"></i>Employee View
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Summary -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Team Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% if team_members %}
+                        {% for member in team_members[:5] %}
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="avatar bg-primary rounded-circle me-2" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                <span class="text-white small">{{ member.first_name[0] }}{{ member.last_name[0] }}</span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="small">{{ member.first_name }} {{ member.last_name }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if team_members|length > 5 %}
+                        <div class="text-center mt-2">
+                            <small class="text-muted">and {{ team_members|length - 5 }} more...</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted small">No team members assigned.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveExpense(expenseId) {
+    if (confirm('Are you sure you want to approve this expense?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/manager/approve/${expenseId}`;
+        
+        const csrfToken = document.querySelector('meta[name=csrf-token]').getAttribute('content');
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function rejectExpense(expenseId) {
+    const reason = prompt('Please provide a reason for rejection (optional):');
+    if (reason !== null) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/manager/reject/${expenseId}`;
+        
+        const csrfToken = document.querySelector('meta[name=csrf-token]').getAttribute('content');
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        if (reason.trim()) {
+            const commentInput = document.createElement('input');
+            commentInput.type = 'hidden';
+            commentInput.name = 'comment';
+            commentInput.value = reason;
+            form.appendChild(commentInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

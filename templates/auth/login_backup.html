@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - ExpensoX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-cyan': '#00ffff',
+                        'neon-purple': '#bf00ff',
+                        'neon-pink': '#ff1493',
+                        'neon-green': '#39ff14',
+                        'dark-bg': '#0a0a0a',
+                        'dark-card': '#1a1a1a',
+                    },
+                    animation: {
+                        'glow-pulse': 'glow-pulse 2s ease-in-out infinite alternate',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 10px #00ffff, 0 0 20px #00ffff',
+                        'neon-green': '0 0 10px #39ff14, 0 0 20px #39ff14',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes glow-pulse {
+            from { text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14; }
+            to { text-shadow: 0 0 10px #39ff14, 0 0 15px #39ff14; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+        }
+        
+        .form-container {
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(57, 255, 20, 0.2);
+        }
+        
+        .input-field {
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            border-color: #39ff14;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+            outline: none;
+        }
+        
+        .btn-neon {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-neon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-neon:hover::before {
+            left: 100%;
+        }
+        
+        .bg-gradient-neon {
+            background: radial-gradient(ellipse at center, rgba(57, 255, 20, 0.1) 0%, rgba(0, 255, 255, 0.1) 35%, rgba(191, 0, 255, 0.1) 70%, rgba(10, 10, 10, 1) 100%);
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-white min-h-screen bg-gradient-neon">
+    <div class="min-h-screen flex items-center justify-center px-4 py-8">
+        <div class="w-full max-w-lg">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-neon-cyan neon-text animate-glow-pulse">ExpensoX</h1>
+                <p class="text-gray-400 mt-2">The Future of Expense Management</p>
+            </div>
+            
+            <div class="form-container bg-dark-card bg-opacity-50 p-8 rounded-xl">
+                <h2 class="text-3xl font-bold text-center mb-2 text-neon-green neon-text">Create Company</h2>
+                <p class="text-center text-gray-400 mb-6 text-sm">
+                    This will create a new company and an admin account
+                </p>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="mb-4 p-3 rounded-lg {% if category == 'danger' %}bg-red-600{% elif category == 'success' %}bg-green-600{% else %}bg-blue-600{% endif %} bg-opacity-20 border {% if category == 'danger' %}border-red-500{% elif category == 'success' %}border-green-500{% else %}border-blue-500{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST" action="{{ url_for('auth.signup') }}" class="space-y-4" id="signup-form">
+                    {{ csrf_token() }}
+                    
+                    <div>
+                        <label for="company_name" class="block text-sm font-medium text-gray-300 mb-2">
+                            Company Name *
+                        </label>
+                        <input type="text" id="company_name" name="company_name" required
+                            class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                            placeholder="Acme Corporation">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="first_name" class="block text-sm font-medium text-gray-300 mb-2">
+                                First Name *
+                            </label>
+                            <input type="text" id="first_name" name="first_name" required
+                                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                placeholder="John">
+                        </div>
+                        <div>
+                            <label for="last_name" class="block text-sm font-medium text-gray-300 mb-2">
+                                Last Name *
+                            </label>
+                            <input type="text" id="last_name" name="last_name" required
+                                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                placeholder="Doe">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
+                            Admin Email *
+                        </label>
+                        <input type="email" id="email" name="email" required
+                            class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                            placeholder="admin@company.com">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+                                Password *
+                            </label>
+                            <input type="password" id="password" name="password" required minlength="6"
+                                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                placeholder="Minimum 6 characters">
+                        </div>
+                        <div>
+                            <label for="confirm_password" class="block text-sm font-medium text-gray-300 mb-2">
+                                Confirm Password *
+                            </label>
+                            <input type="password" id="confirm_password" name="confirm_password" required minlength="6"
+                                class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                                placeholder="Repeat password">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="country" class="block text-sm font-medium text-gray-300 mb-2">
+                            Country (sets default currency) *
+                        </label>
+                        <select id="country" name="country" required
+                            class="input-field w-full px-4 py-3 rounded-lg text-white">
+                            <option value="">Select Country</option>
+                            <option value="USA">United States (USD)</option>
+                            <option value="UK">United Kingdom (GBP)</option>
+                            <option value="India">India (INR)</option>
+                            <option value="Germany">Germany (EUR)</option>
+                            <option value="Japan">Japan (JPY)</option>
+                            <option value="Canada">Canada (CAD)</option>
+                            <option value="Australia">Australia (AUD)</option>
+                            <option value="France">France (EUR)</option>
+                            <option value="Italy">Italy (EUR)</option>
+                            <option value="Spain">Spain (EUR)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="bg-gray-800 bg-opacity-50 p-4 rounded-lg border border-neon-green border-opacity-30">
+                        <h4 class="text-neon-green font-semibold mb-2">⚡ What happens next:</h4>
+                        <ul class="text-sm text-gray-300 space-y-1">
+                            <li>• New company created with selected currency</li>
+                            <li>• Admin account setup for company management</li>
+                            <li>• Full access to expense management features</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <input type="checkbox" id="terms" name="terms" required
+                            class="w-4 h-4 mt-1 text-neon-green bg-transparent border-gray-600 rounded focus:ring-neon-green">
+                        <label for="terms" class="ml-2 text-sm text-gray-300">
+                            I agree to the <a href="#" class="text-neon-cyan hover:text-neon-purple">Terms of Service</a> 
+                            and <a href="#" class="text-neon-cyan hover:text-neon-purple">Privacy Policy</a>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" 
+                        class="w-full bg-gradient-to-r from-neon-green to-neon-cyan text-white py-3 rounded-lg font-semibold hover:shadow-neon-green transition-all duration-300 btn-neon">
+                        Create Company & Admin Account
+                    </button>
+                </form>
+                
+                <div class="text-center mt-6">
+                    <p class="text-gray-400">
+                        Already have an account? 
+                        <a href="{{ url_for('auth.login') }}" class="text-neon-cyan hover:text-neon-purple transition-colors font-semibold">
+                            Sign in here
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Client-side validation
+        document.getElementById('signup-form').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return false;
+            }
+            
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Password must be at least 6 characters long!');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>
