@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings - ExpensoX{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-cog me-2"></i>Account Settings</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('auth.settings') }}">
+                        {{ csrf_token() }}
+                        
+                        <!-- Account Information -->
+                        <div class="mb-4">
+                            <h5>Account Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Name:</strong> {{ current_user.full_name }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Email:</strong> {{ current_user.email }}</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Role:</strong> {{ current_user.role.value.title() }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Company:</strong> {{ current_user.company.name }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Security Settings -->
+                        <div class="mb-4">
+                            <h5>Security Settings</h5>
+                            
+                            <!-- Email Verification Status -->
+                            <div class="mb-3">
+                                <label class="form-label">Email Verification</label>
+                                <div class="d-flex align-items-center">
+                                    {% if current_user.is_email_verified %}
+                                        <span class="badge bg-success me-2">
+                                            <i class="fas fa-check me-1"></i>Verified
+                                        </span>
+                                        <span class="text-muted">Your email address is verified</span>
+                                    {% else %}
+                                        <span class="badge bg-warning me-2">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Unverified
+                                        </span>
+                                        <a href="{{ url_for('otp.verify_page', otp_type='signup') }}" class="btn btn-sm btn-outline-primary">
+                                            Verify Email
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Two-Factor Authentication -->
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="two_factor_enabled" 
+                                           name="two_factor_enabled" {{ 'checked' if current_user.two_factor_enabled else '' }}>
+                                    <label class="form-check-label" for="two_factor_enabled">
+                                        <strong>Two-Factor Authentication</strong>
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    Add an extra layer of security to your account by requiring a verification code when logging in.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Notification Preferences -->
+                        <div class="mb-4">
+                            <h5>Notification Preferences</h5>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="email_notifications" 
+                                           name="email_notifications" checked>
+                                    <label class="form-check-label" for="email_notifications">
+                                        Email notifications for expense updates
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="approval_notifications" 
+                                           name="approval_notifications" checked>
+                                    <label class="form-check-label" for="approval_notifications">
+                                        Email notifications for approval requests
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="weekly_reports" 
+                                           name="weekly_reports">
+                                    <label class="form-check-label" for="weekly_reports">
+                                        Weekly expense summary reports
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Account Actions -->
+                        <div class="mb-4">
+                            <h5>Account Actions</h5>
+                            
+                            <div class="d-grid gap-2 d-md-flex">
+                                <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-user-edit me-2"></i>Edit Profile
+                                </a>
+                                <a href="{{ url_for('auth.forgot_password') }}" class="btn btn-outline-warning">
+                                    <i class="fas fa-key me-2"></i>Change Password
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                                    <i class="fas fa-trash me-2"></i>Delete Account
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Delete Account</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone.
+                </div>
+                <p>Are you sure you want to delete your account? This will:</p>
+                <ul>
+                    <li>Permanently delete your profile and personal data</li>
+                    <li>Remove access to all expenses and reports</li>
+                    <li>Cancel any pending approvals you're responsible for</li>
+                </ul>
+                <p>Type <strong>DELETE</strong> to confirm:</p>
+                <input type="text" class="form-control" id="deleteConfirmation" placeholder="Type DELETE to confirm">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete" disabled>
+                    <i class="fas fa-trash me-2"></i>Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Delete account confirmation
+    const deleteInput = document.getElementById('deleteConfirmation');
+    const confirmBtn = document.getElementById('confirmDelete');
+    
+    deleteInput.addEventListener('input', function() {
+        confirmBtn.disabled = this.value !== 'DELETE';
+    });
+    
+    confirmBtn.addEventListener('click', function() {
+        if (deleteInput.value === 'DELETE') {
+            alert('Account deletion functionality would be implemented here.');
+            // In a real implementation, this would send a request to delete the account
+        }
+    });
+    
+    // Two-factor authentication toggle
+    const twoFactorToggle = document.getElementById('two_factor_enabled');
+    twoFactorToggle.addEventListener('change', function() {
+        if (this.checked) {
+            // In a real implementation, this would trigger 2FA setup
+            console.log('Two-factor authentication enabled');
+        } else {
+            console.log('Two-factor authentication disabled');
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

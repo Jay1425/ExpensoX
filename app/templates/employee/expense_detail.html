@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}Expense Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .expense-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .status-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    .approval-step {
+        border-left: 3px solid;
+        padding-left: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .approval-step:last-child {
+        border-bottom: none;
+    }
+    .approval-step.pending {
+        border-left-color: #ffc107;
+    }
+    .approval-step.approved {
+        border-left-color: #28a745;
+    }
+    .approval-step.rejected {
+        border-left-color: #dc3545;
+    }
+    .receipt-preview {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .info-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .timeline-step {
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .timeline-step::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.5rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #28a745;
+    }
+    .timeline-step.pending::before {
+        background: #ffc107;
+    }
+    .timeline-step.rejected::before {
+        background: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Expense Header -->
+    <div class="expense-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h1 class="h3 mb-2">{{ expense.category.title() }} Expense</h1>
+                <p class="mb-3">{{ expense.description or 'No description provided' }}</p>
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <small class="opacity-75">Amount</small>
+                        <div class="h4 mb-0">${{ "%.2f"|format(expense.amount_original) }} {{ expense.currency_original }}</div>
+                    </div>
+                    <div>
+                        <small class="opacity-75">Date</small>
+                        <div class="h6 mb-0">{{ expense.date_spent.strftime('%B %d, %Y') }}</div>
+                    </div>
+                    <div>
+                        <small class="opacity-75">Submitted</small>
+                        <div class="h6 mb-0">{{ expense.created_at.strftime('%B %d, %Y') if expense.created_at else 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-{{ 'success' if expense.status.name == 'APPROVED' else 'warning' if expense.status.name == 'PENDING' else 'danger' }} status-badge">
+                    {{ expense.status.name.title() }}
+                </span>
+                <div class="mt-2">
+                    <a href="{{ url_for('employee.list_expenses') }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Expenses
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Expense Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Expense Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-section">
+                                <h6 class="text-primary mb-3">Financial Details</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Original Amount</small>
+                                        <strong>${{ "%.2f"|format(expense.amount_original) }} {{ expense.currency_original }}</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Company Currency</small>
+                                        <strong>${{ "%.2f"|format(expense.amount_in_company_currency) }} {{ current_user.company.currency_code }}</strong>
+                                    </div>
+                                </div>
+                                {% if expense.currency_original != current_user.company.currency_code %}
+                                <div class="mt-2">
+                                    <small class="text-info">
+                                        <i class="fas fa-exchange-alt me-1"></i>
+                                        Currency converted at submission time
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-section">
+                                <h6 class="text-success mb-3">Expense Details</h6>
+                                <div class="mb-2">
+                                    <small class="text-muted d-block">Category</small>
+                                    <strong>{{ expense.category.title() }}</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted d-block">Date Spent</small>
+                                    <strong>{{ expense.date_spent.strftime('%A, %B %d, %Y') }}</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted d-block">Expense ID</small>
+                                    <strong>#{{ expense.id }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if expense.description %}
+                    <div class="info-section">
+                        <h6 class="text-info mb-3">Description</h6>
+                        <p class="mb-0">{{ expense.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Receipt -->
+            {% if expense.receipt_path %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-paperclip me-2"></i>Receipt
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ expense.receipt_path }}" alt="Receipt" class="receipt-preview">
+                    <div class="mt-3">
+                        <a href="{{ expense.receipt_path }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-external-link-alt me-2"></i>View Full Size
+                        </a>
+                        <button class="btn btn-outline-secondary" onclick="downloadReceipt()">
+                            <i class="fas fa-download me-2"></i>Download
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-paperclip me-2"></i>Receipt
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">No Receipt Attached</h6>
+                    <p class="text-muted">You can add a receipt by editing this expense.</p>
+                    <button class="btn btn-outline-primary" onclick="uploadReceipt()">
+                        <i class="fas fa-plus me-2"></i>Add Receipt
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if expense.status.name == 'PENDING' %}
+                        <button class="btn btn-primary" onclick="editExpense()">
+                            <i class="fas fa-edit me-2"></i>Edit Expense
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="withdrawExpense()">
+                            <i class="fas fa-times me-2"></i>Withdraw
+                        </button>
+                        {% endif %}
+                        
+                        <button class="btn btn-outline-info" onclick="duplicateExpense()">
+                            <i class="fas fa-copy me-2"></i>Duplicate
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="exportExpense()">
+                            <i class="fas fa-download me-2"></i>Export PDF
+                        </button>
+                        
+                        {% if expense.status.name == 'APPROVED' %}
+                        <button class="btn btn-success" onclick="viewReimbursement()">
+                            <i class="fas fa-money-check-alt me-2"></i>Reimbursement Status
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Approval Status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-route me-2"></i>Approval Progress
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if approvals %}
+                        {% for approval in approvals %}
+                        <div class="timeline-step {{ approval.status.name.lower() }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Step {{ approval.step_number }}</h6>
+                                    {% if approval.approver %}
+                                    <p class="mb-1">{{ approval.approver.first_name }} {{ approval.approver.last_name }}</p>
+                                    {% endif %}
+                                    <small class="text-muted">{{ approval.approver.role.name.title() if approval.approver else 'Pending Assignment' }}</small>
+                                </div>
+                                <span class="badge bg-{{ 'success' if approval.status.name == 'APPROVED' else 'warning' if approval.status.name == 'PENDING' else 'danger' }}">
+                                    {{ approval.status.name.title() }}
+                                </span>
+                            </div>
+                            {% if approval.comments %}
+                            <div class="mt-2 p-2 bg-light rounded">
+                                <small class="text-muted d-block">Comments:</small>
+                                <small>{{ approval.comments }}</small>
+                            </div>
+                            {% endif %}
+                            {% if approval.approved_at %}
+                            <small class="text-muted">
+                                {{ approval.status.name.title() }} on {{ approval.approved_at.strftime('%B %d, %Y at %I:%M %p') }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-hourglass-start fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">Approval process not yet started</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Expense Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Summary
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Submitted by:</span>
+                        <strong>{{ current_user.first_name }} {{ current_user.last_name }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Department:</span>
+                        <strong>{{ current_user.employee_profile.department or 'Not specified' }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Manager:</span>
+                        <strong>
+                            {% if current_user.employee_profile and current_user.employee_profile.manager %}
+                                {{ current_user.employee_profile.manager.first_name }} {{ current_user.employee_profile.manager.last_name }}
+                            {% else %}
+                                Not assigned
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span>Total Amount:</span>
+                        <strong class="text-primary">${{ "%.2f"|format(expense.amount_in_company_currency) }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Expenses -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-link me-2"></i>Related Expenses
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-3">
+                        <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                        <p class="text-muted small">Similar expenses from the same category or date range would appear here</p>
+                        <button class="btn btn-sm btn-outline-primary" onclick="findSimilar()">
+                            <i class="fas fa-search me-1"></i>Find Similar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editExpense() {
+    // In a real implementation, this would redirect to an edit form
+    if (confirm('Redirect to expense edit form?')) {
+        alert('Edit functionality would be implemented here');
+    }
+}
+
+function withdrawExpense() {
+    if (confirm('Are you sure you want to withdraw this expense? This action cannot be undone.')) {
+        // In a real implementation, this would send an API request
+        alert('Expense withdrawal functionality would be implemented here');
+    }
+}
+
+function duplicateExpense() {
+    if (confirm('Create a new expense with the same details?')) {
+        // In a real implementation, this would pre-fill the submission form
+        window.location.href = '{{ url_for("employee.submit_expense") }}?duplicate={{ expense.id }}';
+    }
+}
+
+function exportExpense() {
+    // In a real implementation, this would generate and download a PDF
+    alert('PDF export functionality would be implemented here');
+}
+
+function viewReimbursement() {
+    alert('Reimbursement status tracking would be implemented here');
+}
+
+function downloadReceipt() {
+    // In a real implementation, this would download the receipt file
+    window.open('{{ expense.receipt_path }}', '_blank');
+}
+
+function uploadReceipt() {
+    alert('Receipt upload functionality would be implemented here');
+}
+
+function findSimilar() {
+    alert('Similar expense search functionality would be implemented here');
+}
+
+// Auto-refresh approval status every 30 seconds
+setInterval(function() {
+    // In a real implementation, you could check for approval updates via AJAX
+    console.log('Checking for approval updates...');
+}, 30000);
+</script>
+{% endblock %}
