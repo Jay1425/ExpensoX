@@ -1,39 +1,38 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask
+from flask_wtf import CSRFProtect
+from dotenv import load_dotenv
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-app.secret_key = 'your_secret_key'
+from auth import auth_bp
+from config import Config
+from database.models import bcrypt, db
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+load_dotenv()
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    return render_template('auth/login.html')
+csrf = CSRFProtect()
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    return render_template('auth/signup.html')
 
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
+def create_app(config_class: type[Config] = Config) -> Flask:
+    app = Flask(__name__, template_folder="templates", static_folder="static")
+    app.config.from_object(config_class)
 
-@app.route('/forgot_password', methods=['GET', 'POST'])
-def forgot_password():
-    return render_template('auth/forgot_password.html')
+    db.init_app(app)
+    bcrypt.init_app(app)
+    csrf.init_app(app)
 
-@app.route('/expenses')
-def expenses():
-    return render_template('employee/expenses.html')
+    with app.app_context():
+        db.create_all()
 
-@app.route('/submit_expense')
-def submit_expense():
-    return render_template('employee/submit_expense.html')
+    app.register_blueprint(auth_bp)
 
-if __name__ == '__main__':
+    @app.shell_context_processor
+    def make_shell_context():
+        return {"db": db}
+
+    return app
+
+
+app = create_app()
+
+
+if __name__ == "__main__":
     app.run(debug=True)

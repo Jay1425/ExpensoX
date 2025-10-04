@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ExpensoX &mdash; Authentication Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <div class="max-w-5xl mx-auto px-6 py-12">
+        <header class="flex items-center justify-between">
+            <a href="{{ url_for('auth.index') }}" class="text-2xl font-bold tracking-tight">ExpensoX</a>
+            <nav class="flex items-center gap-4 text-sm font-semibold">
+                <a href="{{ url_for('auth.login') }}" class="hover:text-cyan-400 transition">Login</a>
+                <a href="{{ url_for('auth.signup') }}" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-900 transition">Create account</a>
+            </nav>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                <div class="mt-6 space-y-2">
+                    {% for category, message in messages %}
+                        <div class="rounded-lg border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm {{ 'border-cyan-500 text-cyan-200' if category == 'success' else '' }} {{ 'border-amber-500 text-amber-200' if category == 'warning' else '' }} {{ 'border-rose-500 text-rose-200' if category == 'error' else '' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if dashboard %}
+            <section class="mt-12 rounded-2xl border border-slate-800 bg-slate-900/60 p-10 shadow-2xl shadow-cyan-500/10">
+                <h1 class="text-4xl font-bold tracking-tight">Welcome back, {{ user.name }}!</h1>
+                <p class="mt-4 text-slate-400">You're signed in as <span class="font-semibold text-slate-100">{{ user.role }}</span> for <span class="font-semibold text-slate-100">{{ user.company.name }}</span>.</p>
+                <p class="mt-2 text-slate-500">Expense dashboards and approval workflows are coming soon. Stay tuned!</p>
+                <form method="POST" action="{{ url_for('auth.logout') }}" class="mt-8">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="px-6 py-3 rounded-lg bg-rose-500 hover:bg-rose-400 text-sm font-semibold text-slate-900 transition">Logout</button>
+                </form>
+            </section>
+        {% else %}
+            <section class="mt-16 grid gap-12 lg:grid-cols-[2fr,1fr]">
+                <div class="space-y-6">
+                    <h1 class="text-5xl font-bold leading-tight">
+                        Build your expense workflows with secure onboarding.
+                    </h1>
+                    <p class="text-lg text-slate-400">
+                        ExpensoX keeps teams aligned with verified access, lightning-fast approvals, and automated currency handling from day zero.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="{{ url_for('auth.signup') }}" class="px-6 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold transition">Start free onboarding</a>
+                        <a href="{{ url_for('auth.login') }}" class="px-6 py-3 rounded-lg border border-slate-800 hover:border-cyan-400 hover:text-cyan-300 transition font-semibold">I already have an account</a>
+                    </div>
+                    <div class="mt-8 grid gap-4 md:grid-cols-2">
+                        <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+                            <p class="text-sm uppercase tracking-wide text-cyan-400">Verified Access</p>
+                            <p class="mt-2 text-sm text-slate-400">OTP-backed verification ensures only trusted teammates get in.</p>
+                        </div>
+                        <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+                            <p class="text-sm uppercase tracking-wide text-cyan-400">Global Ready</p>
+                            <p class="mt-2 text-sm text-slate-400">Currencies pulled automatically via RestCountries API.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/30 p-6 space-y-4">
+                    <h2 class="text-lg font-semibold text-slate-200">Quick Actions</h2>
+                    <ol class="space-y-3 text-sm text-slate-400">
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20 font-semibold text-cyan-300">1</span>
+                            <span>Create an admin account for your company.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20 font-semibold text-cyan-300">2</span>
+                            <span>Verify your email with a secure OTP.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20 font-semibold text-cyan-300">3</span>
+                            <span>Sign in and prepare for expense automation.</span>
+                        </li>
+                    </ol>
+                </div>
+            </section>
+        {% endif %}
+    </div>
+</body>
+</html>
