@@ -100,19 +100,13 @@
                 <p class="text-center text-gray-400 mb-6 text-sm">
                     This will create a new company and an admin account
                 </p>
-                
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
+           
                             <div class="mb-4 p-3 rounded-lg {% if category == 'danger' %}bg-red-600{% elif category == 'success' %}bg-green-600{% else %}bg-blue-600{% endif %} bg-opacity-20 border {% if category == 'danger' %}border-red-500{% elif category == 'success' %}border-green-500{% else %}border-blue-500{% endif %}">
-                                {{ message }}
+                              
                             </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-                
-                <form method="POST" action="{{ url_for('auth.signup') }}" class="space-y-4" id="signup-form">
-                    {{ csrf_token() }}
+           
+                <form method="POST" action="" class="space-y-4" id="signup-form">
+
                     
                     <div>
                         <label for="company_name" class="block text-sm font-medium text-gray-300 mb-2">
@@ -217,7 +211,7 @@
                 <div class="text-center mt-6">
                     <p class="text-gray-400">
                         Already have an account? 
-                        <a href="{{ url_for('auth.login') }}" class="text-neon-cyan hover:text-neon-purple transition-colors font-semibold">
+                        <a href="" class="text-neon-cyan hover:text-neon-purple transition-colors font-semibold">
                             Sign in here
                         </a>
                     </p>
