@@ -127,6 +127,7 @@ def otp_verify():
 		heading="Verify your account",
 		description="Enter the 6-digit code we sent to activate your account.",
 		reset_mode=False,
+		config=current_app.config,
 	)
 
 
@@ -214,6 +215,7 @@ def reset_password():
 		heading="Reset your password",
 		description="Enter the OTP we sent, then choose a new password.",
 		reset_mode=True,
+		config=current_app.config,
 	)
 
 
@@ -249,16 +251,23 @@ def dashboard():
 			'total_users': len(company_users)
 		})
 
-	# Role-based dashboard routing
-	role_map = {
-		"CFO": "dashboard/admin_dashboard.html",
-		"DIRECTOR": "dashboard/director_dashboard.html", 
-		"MANAGER": "dashboard/manager_dashboard.html",
-		"FINANCE": "dashboard/finance_dashboard.html",
-		"EMPLOYEE": "dashboard/employee_dashboard.html"
+	# Role-based dashboard routing - redirect users to their specific dashboards
+	role_redirects = {
+		"CFO": "admin.dashboard",           # Admin blueprint
+		"DIRECTOR": "dashboard.director_dashboard",  # Dashboard blueprint  
+		"MANAGER": "manager.dashboard",     # Manager blueprint
+		"FINANCE": "dashboard.finance_dashboard",    # Dashboard blueprint
+		"EMPLOYEE": "employee.dashboard"    # Employee blueprint
 	}
-	template = role_map.get(user.role.value, "dashboard/employee_dashboard.html")
-	return render_template(template, **context)
+	
+	# Get the appropriate redirect for the user's role
+	redirect_route = role_redirects.get(user.role.value)
+	
+	if redirect_route:
+		return redirect(url_for(redirect_route))
+	
+	# Fallback for unknown roles - redirect to employee dashboard
+	return redirect(url_for("employee.dashboard"))
 
 
 @auth_bp.route("/logout", methods=["POST"])

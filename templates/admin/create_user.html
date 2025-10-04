@@ -67,6 +67,7 @@
             <div class="card">
                 <div class="card-body">
                     <form method="POST" id="createUserForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <!-- Basic Information -->
                         <div class="form-section">
                             <h6><i class="fas fa-user me-2"></i>Basic Information</h6>

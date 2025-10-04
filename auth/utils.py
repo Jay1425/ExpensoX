@@ -40,6 +40,19 @@ def send_otp_email(recipient: str, otp_code: str, purpose: str) -> None:
 		"\n— ExpensoX"
 	)
 
+	# Check if we're in development mode (no SMTP configured)
+	config = current_app.config
+	if not (config.get("SMTP_SERVER") and config.get("SMTP_USERNAME") and config.get("SMTP_PASSWORD")):
+		# Development mode: print OTP to console
+		print(f"\n{'='*60}")
+		print(f"DEVELOPMENT MODE - OTP Email for {recipient}")
+		print(f"Purpose: {purpose}")
+		print(f"OTP Code: {otp_code}")
+		print(f"Expires in: {config.get('OTP_EXPIRY_MINUTES', 5)} minutes")
+		print(f"{'='*60}\n")
+		current_app.logger.info(f"Development OTP for {recipient}: {otp_code}")
+		return
+
 	_send_via_smtp(recipient, subject, body, email_purpose="otp")
 
 

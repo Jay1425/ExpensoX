@@ -205,7 +205,7 @@
                 <div class="tooltip">View Expense History</div>
             </a>
             
-            <a href="{{ url_for('auth.profile') }}" 
+            <a href="{{ url_for('employee.profile') }}" 
                class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative {% if current_page == 'profile' %}active{% endif %}">
                 <i data-lucide="user" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
                 <span class="sidebar-text text-slate-300 font-medium">Profile</span>
@@ -227,7 +227,7 @@
             </div>
             
             <form action="{{ url_for('auth.logout') }}" method="POST" class="mt-2">
-                {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg border border-transparent relative w-full text-left hover:bg-red-500/10 hover:border-red-500/30">
                     <i data-lucide="log-out" class="w-5 h-5 text-red-400 flex-shrink-0"></i>
                     <span class="sidebar-text text-red-400 font-medium">Logout</span>

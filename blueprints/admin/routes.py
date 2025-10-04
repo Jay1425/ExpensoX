@@ -89,12 +89,31 @@ def users():
         if not current_user:
             return redirect(url_for('auth.login'))
             
-        # Get all users except the current admin
-        users = User.query.filter(User.id != current_user.id).all()
+        # Scope view to current company where possible
+        user_query = User.query
+        manager_query = User.query
+
+        if current_user.company_id:
+            user_query = user_query.filter(User.company_id == current_user.company_id)
+            manager_query = manager_query.filter(User.company_id == current_user.company_id)
+
+        # Get all users except the current admin for listing
+        users = (user_query
+                 .filter(User.id != current_user.id)
+                 .order_by(User.name.asc())
+                 .all())
+
+        # Collect all potential managers including the CFO/admin
+        manager_options = (manager_query
+                           .filter(User.role.in_([UserRole.CFO, UserRole.DIRECTOR, UserRole.MANAGER]))
+                           .order_by(User.name.asc())
+                           .all())
+
         company = Company.query.first()
         
         return render_template('admin/users.html', 
                              users=users, 
+                             manager_options=manager_options,
                              company=company,
                              current_user=current_user,
                              current_page='users')

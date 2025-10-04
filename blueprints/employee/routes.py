@@ -29,7 +29,7 @@ def employee_required(f):
         user = User.query.get(user_id)
         if not user or user.role != UserRole.EMPLOYEE:
             flash('Access denied. Employee privileges required.', 'error')
-            return redirect(url_for('auth.dashboard'))
+            return redirect(url_for('auth.login'))
         
         return f(*args, **kwargs)
     return decorated_function
@@ -165,9 +165,31 @@ def submit_expense():
     
     # GET request - show form
     try:
-        # Get categories for the company
-        categories = Category.query.filter_by(company_id=current_user.company_id).all()
-        
+        categories = (Category.query
+                               .filter_by(company_id=current_user.company_id)
+                               .order_by(Category.name.asc())
+                               .all())
+
+        if not categories:
+            # Seed sensible defaults so employees can submit expenses without manual setup
+            default_categories = [
+                ("General", "General purpose expenses"),
+                ("Travel", "Transportation, lodging, and trip-related costs"),
+                ("Meals", "Food and hospitality expenses"),
+                ("Supplies", "Office and work-related supplies"),
+            ]
+            for name, description in default_categories:
+                db.session.add(Category(
+                    name=name,
+                    description=description,
+                    company_id=current_user.company_id
+                ))
+            db.session.commit()
+            categories = (Category.query
+                                   .filter_by(company_id=current_user.company_id)
+                                   .order_by(Category.name.asc())
+                                   .all())
+
         # Get currencies
         currencies = fetch_currencies()
         
@@ -181,8 +203,9 @@ def submit_expense():
                              current_user=current_user,
                              current_page='submit_expense')
     except Exception as e:
+        db.session.rollback()
         flash(f'Error loading form: {str(e)}', 'error')
-        return redirect(url_for('auth.dashboard'))
+        return redirect(url_for('employee.dashboard'))
 
 @employee_bp.route('/expense_history')
 @employee_required
@@ -202,7 +225,7 @@ def expense_history():
                              current_page='expense_history')
     except Exception as e:
         flash(f'Error loading expense history: {str(e)}', 'error')
-        return redirect(url_for('auth.dashboard'))
+        return redirect(url_for('employee.dashboard'))
 
 @employee_bp.route('/dashboard')
 @employee_required
@@ -237,7 +260,66 @@ def dashboard():
                              current_page='dashboard')
     except Exception as e:
         flash(f'Error loading dashboard: {str(e)}', 'error')
-        return redirect(url_for('auth.dashboard'))
+        return redirect(url_for('auth.login'))
+
+@employee_bp.route('/profile', methods=['GET', 'POST'])
+@employee_required
+def profile():
+    """Employee profile page"""
+    current_user = get_current_user()
+    if not current_user:
+        return redirect(url_for('auth.login'))
+    
+    if request.method == 'POST':
+        try:
+            # Update profile information
+            name = request.form.get('name')
+            email = request.form.get('email')
+            
+            if name:
+                current_user.name = name
+            
+            if email and email != current_user.email:
+                # Check if email already exists
+                existing_user = User.query.filter_by(email=email).first()
+                if existing_user and existing_user.id != current_user.id:
+                    flash('Email already in use.', 'error')
+                    return redirect(url_for('employee.profile'))
+                current_user.email = email
+            
+            # Handle password change if provided
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+            
+            if current_password and new_password:
+                if not current_user.check_password(current_password):
+                    flash('Current password is incorrect.', 'error')
+                    return redirect(url_for('employee.profile'))
+                
+                if new_password != confirm_password:
+                    flash('New passwords do not match.', 'error')
+                    return redirect(url_for('employee.profile'))
+                
+                if len(new_password) < 6:
+                    flash('New password must be at least 6 characters.', 'error')
+                    return redirect(url_for('employee.profile'))
+                
+                current_user.set_password(new_password)
+            
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('employee.profile'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating profile: {str(e)}', 'error')
+            return redirect(url_for('employee.profile'))
+    
+    return render_template('employee/profile.html',
+                         current_user=current_user,
+                         company=current_user.company,
+                         current_page='profile')
 
 # API endpoint for fetching currencies (for frontend)
 @employee_bp.route('/api/currencies')

@@ -47,6 +47,10 @@ def assign_otp(user: User, otp_code: str) -> None:
 
 
 def is_otp_valid(user: User, submitted_code: str) -> bool:
+	# Development bypass: allow '000000' as a universal OTP in dev mode
+	if submitted_code == "000000" and not current_app.config.get("SMTP_SERVER"):
+		return True
+		
 	if not user.otp_code or not user.otp_expiry:
 		return False
 	if datetime.utcnow() > user.otp_expiry:
