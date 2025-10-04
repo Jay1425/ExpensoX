@@ -52,12 +52,14 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     init_email_service(mail)
 
     # Register blueprints
+    from app.main import main_bp
     from app.auth import auth_bp
     from app.admin import admin_bp
     from app.employee import employee_bp
     from app.manager import manager_bp
     from app.otp import otp_bp
 
+    app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(employee_bp)

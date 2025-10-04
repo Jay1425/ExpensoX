@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}Create Approval Rule{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rule-type-card {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 1rem;
+        height: 100%;
+    }
+    .rule-type-card:hover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+    .rule-type-card.active {
+        border-color: #007bff;
+        background-color: #e3f2fd;
+    }
+    .rule-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    .condition-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-left: 4px solid #007bff;
+    }
+    .preview-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+    }
+    .logic-display {
+        background: rgba(255,255,255,0.1);
+        border-radius: 6px;
+        padding: 1rem;
+        font-family: 'Courier New', monospace;
+        backdrop-filter: blur(10px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Create Approval Rule</h1>
+                    <p class="text-muted">Define conditions for automatic expense approval</p>
+                </div>
+                <a href="{{ url_for('admin.approval_rules') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Rules
+                </a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" id="createRuleForm">
+                        <!-- Rule Type Selection -->
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-cogs me-2"></i>Rule Type
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="rule-type-card" onclick="selectRuleType('AUTO_APPROVE')">
+                                        <input type="radio" name="rule_type" value="AUTO_APPROVE" 
+                                               id="autoApprove" required style="display: none;">
+                                        <div class="text-center">
+                                            <i class="fas fa-check-circle rule-icon text-success"></i>
+                                            <h6>Auto Approve</h6>
+                                            <p class="text-muted small mb-0">
+                                                Automatically approve expenses that meet specific criteria
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="rule-type-card" onclick="selectRuleType('PERCENTAGE_BASED')">
+                                        <input type="radio" name="rule_type" value="PERCENTAGE_BASED" 
+                                               id="percentageBased" required style="display: none;">
+                                        <div class="text-center">
+                                            <i class="fas fa-percentage rule-icon text-warning"></i>
+                                            <h6>Percentage Based</h6>
+                                            <p class="text-muted small mb-0">
+                                                Apply rules based on percentage of budget or threshold
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="rule-type-card" onclick="selectRuleType('SPECIFIC_APPROVER')">
+                                        <input type="radio" name="rule_type" value="SPECIFIC_APPROVER" 
+                                               id="specificApprover" required style="display: none;">
+                                        <div class="text-center">
+                                            <i class="fas fa-user-check rule-icon text-info"></i>
+                                            <h6>Specific Approver</h6>
+                                            <p class="text-muted small mb-0">
+                                                Route to a specific person for approval
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rule Conditions -->
+                        <div id="conditionsSection" style="display: none;">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-sliders-h me-2"></i>Rule Conditions
+                            </h6>
+
+                            <!-- Percentage Based Conditions -->
+                            <div id="percentageConditions" class="condition-section" style="display: none;">
+                                <h6 class="text-warning mb-3">
+                                    <i class="fas fa-percentage me-2"></i>Percentage Threshold
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="percentage_threshold" class="form-label">
+                                                Threshold Percentage *
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" 
+                                                       id="percentage_threshold" name="percentage_threshold" 
+                                                       min="1" max="100" placeholder="25" 
+                                                       onchange="updatePreview()">
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                            <div class="form-text">
+                                                Percentage of budget that triggers this rule
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Rule Action</label>
+                                            <select class="form-select" id="percentageAction" onchange="updatePreview()">
+                                                <option value="require_approval">Require Additional Approval</option>
+                                                <option value="auto_approve">Auto-Approve Below Threshold</option>
+                                                <option value="escalate">Escalate to Higher Authority</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Rule Description</label>
+                                    <textarea class="form-control" rows="2" 
+                                              placeholder="e.g., Expenses exceeding 25% of budget require manager approval"
+                                              onchange="updatePreview()"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Specific Approver Conditions -->
+                            <div id="approverConditions" class="condition-section" style="display: none;">
+                                <h6 class="text-info mb-3">
+                                    <i class="fas fa-user-check me-2"></i>Approver Assignment
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="specific_approver_id" class="form-label">
+                                                Select Approver *
+                                            </label>
+                                            <select class="form-select" id="specific_approver_id" 
+                                                    name="specific_approver_id" onchange="updatePreview()">
+                                                <option value="">Choose an approver...</option>
+                                                {% for approver in approvers %}
+                                                <option value="{{ approver.id }}">
+                                                    {{ approver.name }} ({{ approver.email }})
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Amount Threshold ($)</label>
+                                            <input type="number" class="form-control" 
+                                                   placeholder="1000" step="0.01" 
+                                                   onchange="updatePreview()">
+                                            <div class="form-text">
+                                                Minimum amount to trigger this rule (optional)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Category Restrictions</label>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="travel" id="catTravel">
+                                                <label class="form-check-label" for="catTravel">Travel</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="meals" id="catMeals">
+                                                <label class="form-check-label" for="catMeals">Meals</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="office" id="catOffice">
+                                                <label class="form-check-label" for="catOffice">Office</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="equipment" id="catEquipment">
+                                                <label class="form-check-label" for="catEquipment">Equipment</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-text">
+                                        Apply this rule only to selected categories (leave empty for all)
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Auto Approve Conditions -->
+                            <div id="autoApproveConditions" class="condition-section" style="display: none;">
+                                <h6 class="text-success mb-3">
+                                    <i class="fas fa-check-circle me-2"></i>Auto-Approval Criteria
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Maximum Amount ($)</label>
+                                            <input type="number" class="form-control" 
+                                                   placeholder="500" step="0.01" 
+                                                   onchange="updatePreview()">
+                                            <div class="form-text">
+                                                Auto-approve expenses below this amount
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Time Restriction</label>
+                                            <select class="form-select" onchange="updatePreview()">
+                                                <option value="">No Time Restriction</option>
+                                                <option value="business_hours">Business Hours Only</option>
+                                                <option value="weekdays">Weekdays Only</option>
+                                                <option value="working_days">Working Days Only</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Additional Conditions</label>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="requireReceipt">
+                                                <label class="form-check-label" for="requireReceipt">
+                                                    Receipt Required
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="requireJustification">
+                                                <label class="form-check-label" for="requireJustification">
+                                                    Justification Required
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="withinBudget">
+                                                <label class="form-check-label" for="withinBudget">
+                                                    Must be Within Budget
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="preApproved">
+                                                <label class="form-check-label" for="preApproved">
+                                                    Pre-approved Categories Only
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Settings -->
+                        <div id="advancedSettings" style="display: none;">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-cog me-2"></i>Advanced Settings
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Rule Priority</label>
+                                        <select class="form-select">
+                                            <option value="high">High Priority</option>
+                                            <option value="medium" selected>Medium Priority</option>
+                                            <option value="low">Low Priority</option>
+                                        </select>
+                                        <div class="form-text">Higher priority rules are evaluated first</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Effective Date</label>
+                                        <input type="date" class="form-control" 
+                                               value="{{ moment().format('YYYY-MM-DD') }}">
+                                        <div class="form-text">When this rule becomes active</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="enableRule" checked>
+                                        <label class="form-check-label" for="enableRule">
+                                            Enable Rule Immediately
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="logActions">
+                                        <label class="form-check-label" for="logActions">
+                                            Log All Rule Actions
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                                <i class="fas fa-undo me-2"></i>Reset Form
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-outline-info me-2" onclick="testRule()">
+                                    <i class="fas fa-play me-2"></i>Test Rule
+                                </button>
+                                <a href="{{ url_for('admin.approval_rules') }}" class="btn btn-secondary me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Create Rule
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Rule Preview -->
+            <div class="preview-box mb-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-eye me-2"></i>Rule Preview
+                </h6>
+                <div id="rulePreview">
+                    <div class="text-center text-white-50">
+                        <i class="fas fa-cogs fa-2x mb-2"></i>
+                        <p>Select a rule type to see the preview</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rule Examples -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Rule Examples
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-success">Auto-Approve Example</h6>
+                        <p class="small text-muted">
+                            Auto-approve office supply expenses under $100 during business hours with receipt.
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-warning">Percentage Example</h6>
+                        <p class="small text-muted">
+                            Require manager approval for expenses exceeding 25% of department budget.
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-info">Specific Approver Example</h6>
+                        <p class="small text-muted">
+                            Route all travel expenses over $1000 to the Finance Manager for approval.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Rule Modal -->
+<div class="modal fade" id="testRuleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test Rule Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Test your rule with sample expense data</p>
+                <form id="testForm">
+                    <div class="mb-3">
+                        <label class="form-label">Test Amount ($)</label>
+                        <input type="number" class="form-control" placeholder="Enter amount to test">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Budget ($)</label>
+                        <input type="number" class="form-control" placeholder="Total budget amount">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select">
+                            <option value="travel">Travel</option>
+                            <option value="office">Office Supplies</option>
+                            <option value="meals">Meals</option>
+                            <option value="equipment">Equipment</option>
+                        </select>
+                    </div>
+                </form>
+                <div id="testResult" class="mt-3" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="runTest()">Run Test</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentRuleType = null;
+
+function selectRuleType(ruleType) {
+    // Remove active class from all cards
+    document.querySelectorAll('.rule-type-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Add active class to selected card
+    event.currentTarget.classList.add('active');
+    
+    // Set the radio button
+    document.getElementById(ruleType.toLowerCase().replace('_', '') + (ruleType === 'PERCENTAGE_BASED' ? 'Based' : ruleType === 'SPECIFIC_APPROVER' ? 'Approver' : '')).checked = true;
+    
+    currentRuleType = ruleType;
+    
+    // Show conditions section
+    document.getElementById('conditionsSection').style.display = 'block';
+    document.getElementById('advancedSettings').style.display = 'block';
+    
+    // Hide all condition subsections
+    document.getElementById('percentageConditions').style.display = 'none';
+    document.getElementById('approverConditions').style.display = 'none';
+    document.getElementById('autoApproveConditions').style.display = 'none';
+    
+    // Show relevant condition section
+    switch(ruleType) {
+        case 'PERCENTAGE_BASED':
+            document.getElementById('percentageConditions').style.display = 'block';
+            break;
+        case 'SPECIFIC_APPROVER':
+            document.getElementById('approverConditions').style.display = 'block';
+            break;
+        case 'AUTO_APPROVE':
+            document.getElementById('autoApproveConditions').style.display = 'block';
+            break;
+    }
+    
+    updatePreview();
+}
+
+function updatePreview() {
+    const previewContainer = document.getElementById('rulePreview');
+    
+    if (!currentRuleType) {
+        previewContainer.innerHTML = `
+            <div class="text-center text-white-50">
+                <i class="fas fa-cogs fa-2x mb-2"></i>
+                <p>Select a rule type to see the preview</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let previewHtml = `<div class="logic-display">`;
+    
+    switch(currentRuleType) {
+        case 'PERCENTAGE_BASED':
+            const threshold = document.getElementById('percentage_threshold').value || '25';
+            previewHtml += `
+                <strong>IF</strong> expense_amount / budget_amount >= ${threshold}%<br>
+                <strong>THEN</strong> require_additional_approval = true<br>
+                <strong>ELSE</strong> proceed_with_normal_flow = true
+            `;
+            break;
+            
+        case 'SPECIFIC_APPROVER':
+            const approverId = document.getElementById('specific_approver_id').value;
+            const approverName = approverId ? 
+                document.querySelector(`#specific_approver_id option[value="${approverId}"]`).textContent :
+                '[Selected Approver]';
+            previewHtml += `
+                <strong>IF</strong> rule_conditions_met = true<br>
+                <strong>THEN</strong> route_to_approver = "${approverName}"<br>
+                <strong>ELSE</strong> use_default_flow = true
+            `;
+            break;
+            
+        case 'AUTO_APPROVE':
+            previewHtml += `
+                <strong>IF</strong> expense_amount <= max_amount<br>
+                <strong>AND</strong> all_conditions_met = true<br>
+                <strong>THEN</strong> auto_approve = true<br>
+                <strong>ELSE</strong> require_manual_approval = true
+            `;
+            break;
+    }
+    
+    previewHtml += `</div>`;
+    previewContainer.innerHTML = previewHtml;
+}
+
+function testRule() {
+    const testModal = new bootstrap.Modal(document.getElementById('testRuleModal'));
+    testModal.show();
+}
+
+function runTest() {
+    // Simulate rule testing
+    const resultDiv = document.getElementById('testResult');
+    resultDiv.innerHTML = `
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>Test Result:</strong> Rule would auto-approve this expense based on current configuration.
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+}
+
+function resetForm() {
+    if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+        document.getElementById('createRuleForm').reset();
+        document.querySelectorAll('.rule-type-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        document.getElementById('conditionsSection').style.display = 'none';
+        document.getElementById('advancedSettings').style.display = 'none';
+        currentRuleType = null;
+        updatePreview();
+    }
+}
+
+// Form validation
+document.getElementById('createRuleForm').addEventListener('submit', function(e) {
+    if (!currentRuleType) {
+        e.preventDefault();
+        alert('Please select a rule type.');
+        return;
+    }
+    
+    // Additional validation based on rule type
+    if (currentRuleType === 'PERCENTAGE_BASED') {
+        const threshold = document.getElementById('percentage_threshold').value;
+        if (!threshold || threshold < 1 || threshold > 100) {
+            e.preventDefault();
+            alert('Please enter a valid percentage threshold (1-100).');
+            return;
+        }
+    }
+    
+    if (currentRuleType === 'SPECIFIC_APPROVER') {
+        const approverId = document.getElementById('specific_approver_id').value;
+        if (!approverId) {
+            e.preventDefault();
+            alert('Please select an approver.');
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}
