@@ -20,12 +20,15 @@ class User(UserMixin, db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.Enum(UserRole, name="user_role"), nullable=False, default=UserRole.EMPLOYEE)
     company_id = db.Column(db.Integer, db.ForeignKey("companies.id"), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    is_email_verified = db.Column(db.Boolean, default=False, nullable=False)
+    two_factor_enabled = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
     company = db.relationship("Company", back_populates="users", lazy="joined")
@@ -67,13 +70,22 @@ class User(UserMixin, db.Model):
     def to_dict(self) -> dict:
         return {
             "id": self.id,
-            "name": self.name,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "full_name": f"{self.first_name} {self.last_name}",
             "email": self.email,
             "role": self.role.value,
             "company_id": self.company_id,
             "is_active": self.is_active,
+            "is_email_verified": self.is_email_verified,
+            "two_factor_enabled": self.two_factor_enabled,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+    @property
+    def full_name(self) -> str:
+        """Get user's full name."""
+        return f"{self.first_name} {self.last_name}"
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"

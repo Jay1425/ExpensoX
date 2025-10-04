@@ -11,6 +11,7 @@ from .approval import (
     ApprovalDecisionStatus,
 )  # noqa: F401
 from .audit import AuditLog  # noqa: F401
+from .otp import OTPVerification  # noqa: F401
 
 __all__ = [
     "db",
@@ -26,4 +27,5 @@ __all__ = [
     "ApprovalRule",
     "ApprovalRuleType",
     "AuditLog",
+    "OTPVerification",
 ]

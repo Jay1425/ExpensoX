@@ -7,6 +7,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from flask import Flask
 from flask_login import LoginManager
+from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
@@ -19,6 +20,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 csrf = CSRFProtect()
+mail = Mail()
 
 
 def create_app(config_name: Optional[str] = None) -> Flask:
@@ -43,24 +45,31 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     csrf.init_app(app)
+    mail.init_app(app)
+
+    # Initialize email service
+    from app.services.email_service import init_email_service
+    init_email_service(mail)
 
     # Register blueprints
     from app.auth import auth_bp
     from app.admin import admin_bp
     from app.employee import employee_bp
     from app.manager import manager_bp
+    from app.otp import otp_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(employee_bp)
     app.register_blueprint(manager_bp)
+    app.register_blueprint(otp_bp)
 
     # User loader for Flask-Login
     from app.models import User
     # Import all models to ensure they are registered with SQLAlchemy
     from app.models import (
         Company, EmployeeProfile, Expense, ExpenseApproval, 
-        ApprovalFlow, ApprovalRule, AuditLog
+        ApprovalFlow, ApprovalRule, AuditLog, OTPVerification
     )
 
     @login_manager.user_loader
