@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Pending Approvals - ExpensoX{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-clock me-2"></i>Pending Approvals</h2>
+            <p class="text-muted">Review and approve expense submissions from your team</p>
+        </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>0</h4>
+                            <p class="mb-0">Pending Today</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>0</h4>
+                            <p class="mb-0">Overdue</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>$0.00</h4>
+                            <p class="mb-0">Total Amount</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>0</h4>
+                            <p class="mb-0">Approved Today</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="employee" class="form-label">Employee</label>
+                            <select class="form-select" id="employee" name="employee">
+                                <option value="">All Employees</option>
+                                <!-- Will be populated with team members -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="">All Priorities</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="normal">Normal</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="amount_min" class="form-label">Min Amount</label>
+                            <input type="number" class="form-control" id="amount_min" name="amount_min" step="0.01">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="amount_max" class="form-label">Max Amount</label>
+                            <input type="number" class="form-control" id="amount_max" name="amount_max" step="0.01">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-filter me-2"></i>Filter
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pending Approvals Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-list me-2"></i>Expenses Awaiting Approval</h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-success" id="bulkApprove" disabled>
+                            <i class="fas fa-check me-1"></i>Approve Selected
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" id="bulkReject" disabled>
+                            <i class="fas fa-times me-1"></i>Reject Selected
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    </th>
+                                    <th>Employee</th>
+                                    <th>Expense Title</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Submitted</th>
+                                    <th>Priority</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Sample data - will be populated dynamically -->
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-5">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                                        <p>No pending approvals at this time</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approval Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Review Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <!-- Expense details will be loaded here -->
+                        <h6>Expense Information</h6>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tr><td><strong>Title:</strong></td><td id="expenseTitle">-</td></tr>
+                                <tr><td><strong>Employee:</strong></td><td id="expenseEmployee">-</td></tr>
+                                <tr><td><strong>Amount:</strong></td><td id="expenseAmount">-</td></tr>
+                                <tr><td><strong>Category:</strong></td><td id="expenseCategory">-</td></tr>
+                                <tr><td><strong>Date:</strong></td><td id="expenseDate">-</td></tr>
+                                <tr><td><strong>Description:</strong></td><td id="expenseDescription">-</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Receipt/Attachments</h6>
+                        <div id="expenseAttachments" class="text-center text-muted">
+                            <i class="fas fa-file fa-3x mb-2"></i>
+                            <p>No attachments</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6>Approval Decision</h6>
+                        <form id="approvalForm">
+                            <div class="mb-3">
+                                <label for="approvalComments" class="form-label">Comments (Optional)</label>
+                                <textarea class="form-control" id="approvalComments" name="comments" rows="3" 
+                                          placeholder="Add any comments about this approval decision..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger me-2" id="rejectExpense">
+                    <i class="fas fa-times me-2"></i>Reject
+                </button>
+                <button type="button" class="btn btn-success" id="approveExpense">
+                    <i class="fas fa-check me-2"></i>Approve
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Select all checkbox functionality
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBulkButtons();
+    });
+    
+    // Update bulk action buttons based on selection
+    function updateBulkButtons() {
+        const checkedBoxes = document.querySelectorAll('tbody input[type="checkbox"]:checked');
+        const bulkApprove = document.getElementById('bulkApprove');
+        const bulkReject = document.getElementById('bulkReject');
+        
+        if (checkedBoxes.length > 0) {
+            bulkApprove.disabled = false;
+            bulkReject.disabled = false;
+        } else {
+            bulkApprove.disabled = true;
+            bulkReject.disabled = true;
+        }
+    }
+</script>
+{% endblock %}
+{% endblock %}
