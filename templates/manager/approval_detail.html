@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Approval Detail - ExpensoX{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Expense Approval Detail</h1>
+        <a href="{{ url_for('manager.pending_approvals') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Approvals
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Expense Details -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Expense Details</h5>
+                    <span class="badge badge-{{ 'warning' if expense.status.value == 'PENDING' else 'success' if expense.status.value == 'APPROVED' else 'danger' }}">
+                        {{ expense.status.value }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Employee Information</h6>
+                            <div class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar bg-primary rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-white">{{ expense.submitter.first_name[0] }}{{ expense.submitter.last_name[0] }}</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium">{{ expense.submitter.first_name }} {{ expense.submitter.last_name }}</div>
+                                        <small class="text-muted">{{ expense.submitter.email }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Expense Information</h6>
+                            <div class="mb-3">
+                                <div><strong>Amount:</strong> ${{ "{:,.2f}".format(expense.amount) }}</div>
+                                <div><strong>Category:</strong> {{ expense.category.name if expense.category else 'N/A' }}</div>
+                                <div><strong>Date:</strong> {{ expense.expense_date.strftime('%Y-%m-%d') }}</div>
+                                <div><strong>Submitted:</strong> {{ expense.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if expense.description %}
+                    <div class="mb-3">
+                        <h6>Description</h6>
+                        <p class="text-muted">{{ expense.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if expense.receipt_path %}
+                    <div class="mb-3">
+                        <h6>Receipt</h6>
+                        <div class="border rounded p-3 text-center">
+                            <i class="fas fa-file-image fa-2x text-muted mb-2"></i>
+                            <div>
+                                <a href="{{ url_for('static', filename='receipts/' + expense.receipt_path) }}" 
+                                   target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-external-link-alt"></i> View Receipt
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Approval Actions -->
+            {% if approval and approval.status.value == 'PENDING' %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Approval Actions</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="approvalForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">Comment (Optional)</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="3" 
+                                      placeholder="Add a comment about your decision..."></textarea>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-success me-md-2" onclick="submitApproval('approve')">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="submitApproval('reject')">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Approval Timeline -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Approval Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Expense Submitted</h6>
+                                <small class="text-muted">{{ expense.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                <p class="small mb-0">By {{ expense.submitter.first_name }} {{ expense.submitter.last_name }}</p>
+                            </div>
+                        </div>
+
+                        {% if approval %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-{{ 'warning' if approval.status.value == 'PENDING' else 'success' if approval.status.value == 'APPROVED' else 'danger' }}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">
+                                    {% if approval.status.value == 'PENDING' %}
+                                        Pending Approval
+                                    {% elif approval.status.value == 'APPROVED' %}
+                                        Approved
+                                    {% elif approval.status.value == 'REJECTED' %}
+                                        Rejected
+                                    {% endif %}
+                                </h6>
+                                {% if approval.status.value != 'PENDING' %}
+                                    <small class="text-muted">{{ approval.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    <p class="small mb-0">By {{ approval.approver.first_name }} {{ approval.approver.last_name }}</p>
+                                    {% if approval.comment %}
+                                    <p class="small mb-0 mt-1"><em>"{{ approval.comment }}"</em></p>
+                                    {% endif %}
+                                {% else %}
+                                    <small class="text-muted">Assigned to {{ approval.approver.first_name }} {{ approval.approver.last_name }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Guidelines -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Approval Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Verify receipt matches expense details
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Ensure expense is business-related
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Check amount is reasonable
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Confirm policy compliance
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 6px;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-content h6 {
+    margin-bottom: 4px;
+}
+</style>
+
+<script>
+function submitApproval(action) {
+    const form = document.getElementById('approvalForm');
+    const comment = document.getElementById('comment').value;
+    
+    let confirmMessage = action === 'approve' ? 
+        'Are you sure you want to approve this expense?' : 
+        'Are you sure you want to reject this expense?';
+    
+    if (confirm(confirmMessage)) {
+        const actionUrl = action === 'approve' ? 
+            '{{ url_for("manager.approve_expense", expense_id=expense.id) }}' :
+            '{{ url_for("manager.reject_expense", expense_id=expense.id) }}';
+        
+        form.action = actionUrl;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
